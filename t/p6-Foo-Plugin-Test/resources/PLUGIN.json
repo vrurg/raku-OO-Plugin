@@ -1,0 +1,7 @@
+{
+    "Foo::Plugin::Test": {
+        "class": "TestPlugin",
+        "name": "Test",
+        "after": "UnknownPlugin"
+    }
+}

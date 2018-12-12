@@ -1,0 +1,42 @@
+{
+  "test-depends": [
+    "Test",
+    "Test::META",
+    "Test::When"
+  ],
+  "production": false,
+  "build-depends": [
+    "META6",
+    "p6doc",
+    "Pod::To::Markdown"
+  ],
+  "resources": [
+    
+  ],
+  "meta-version": "0",
+  "depends": [
+    "Pluggable"
+  ],
+  "description": "IPv4/IPv6 manipulation",
+  "source-url": "git://github.com/vrurg/Perl6-OO-Plugin.git",
+  "perl": "6.*",
+  "tags": [
+    "OO",
+    "Plugin",
+    "Plugins"
+  ],
+  "authors": [
+    "Vadim Belman <vrurg@cpan.org>"
+  ],
+  "name": "OO::Plugin",
+  "provides": {
+    "OO::Plugin": "lib/OO/Plugin.pm6",
+    "OO::Plugin::Manager": "lib/OO/Plugin/Manager.pm6"
+  },
+  "auth": "github:vrurg",
+  "license": "Artistic-2.0",
+  "support": {
+    "source": "https://github.com/vrurg/Perl6-OO-Plugin.git"
+  },
+  "version": "0.0.0"
+}
