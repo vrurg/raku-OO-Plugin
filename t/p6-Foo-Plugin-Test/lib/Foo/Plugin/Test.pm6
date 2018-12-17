@@ -1,14 +1,13 @@
-use v6;
+use v6.d;
 unit module Foo::Plugin::Test;
 use OO::Plugin;
 
-our $b = pi;
-our sub HEH is export {
-    note "!!HEH";
-    note %?RESOURCES;
-    %?RESOURCES
+plugin TestPlugin {
+    our %meta =
+        after => <SomePlugin>,
+        ;
 }
 
-class TestPlugin is OO::Plugin is export {
-
+plugin Sample {
+    our %meta;
 }

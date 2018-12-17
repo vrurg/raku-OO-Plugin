@@ -1,7 +1,20 @@
 use v6;
 
-class OO::Plugin:auth<CPAN:VRURG>:ver<0.0.0>:api<0> is export {
+my package EXPORTHOW {
+    package DECLARE {
+        use OO::Plugin::Metamodel::PluginHOW;
+        constant plugin = OO::Plugin::Metamodel::PluginHOW;
+    }
 }
 
 role OO::Pluggable is export {
+}
+
+sub EXPORT {
+    use OO::Plugin::Class;
+    use OO::Plugin::Registry;
+    %(
+        'Plugin' => 'Plugin',
+        '&plugin-meta' => &plugin-meta,
+    )
 }

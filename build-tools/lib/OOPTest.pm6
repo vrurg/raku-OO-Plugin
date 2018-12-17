@@ -9,7 +9,7 @@ sub install-distro ( Str:D $source, Str:D :$dest-dir = '.test-repo' --> Bool ) i
     %env<PERL6LIB> = (|@p6libs, './lib').join(':');
     my $proc = run "zef", "install", "--to=inst#$dest-dir", "--force", $source, :out, :err, :%env;
     unless $proc.exitcode == 0 {
-        diag "'zef install' exit code:", $proc.exitcode;
+        diag "'zef install' exit code: [{$proc.exitcode}]";
         diag "Module install output:";
         diag "> Stdout:";
         diag $proc.out.slurp;

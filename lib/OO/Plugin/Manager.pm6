@@ -1,10 +1,24 @@
 use v6;
 unit class Manager:auth<CPAN:VRURG>:ver<0.0.0>:api<0>;
-use Pluggable;
 use File::Find;
 use JSON::Fast;
+use Data::Dump;
+use OO::Plugin::Metamodel::PluginHOW;
+use OO::Plugin::Registry;
 
-constant $PLUGIN-JSON = "PLUGIN.json";
+my class X::OO::Plugin::NotFound is Exception {
+    has $.plugin;
+
+    method message {
+        "No plugin '$!plugin' found"
+    }
+}
+
+# constant $PLUGIN-JSON = "PLUGIN.json";
+
+enum PlugPriority is export <plugLast plugNormal plugFirst>;
+
+# --- ATTRIBUTES
 
 has Str $.base is required;
 has @.namespaces = <Plugin Plugins>;
@@ -16,17 +30,147 @@ has &.validator where * ~~ :( Str $ --> Bool );
 has %!disabled;
 
 # Plugin modules metadata. Hash of hashes of attributes:
-# 'A::Plugin::Sample' => {
-#       meta-file => "/path/to/resources/PLUGIN.json",
-#       other-info => ...,
+# 'A::Plugin::Sample' => { # First level keys must always be plugin's FQN
+# Type object corresponding to the class
+#       type => TypeObject,
+# Plugin meta-data fetched from it's %meta
+#       meta => { meta-key => "meta-value", ... },
+# Plugin version
+#       version => v0.0.1,
 # },
 has %!mod-info;
 
-# Meta-data fetched from both PLUGIN.json and module's %meta
-# This attribute may not contain any generated data – only what comes from PLUGIN.json or plugin module's %meta
-has %!mod-meta;
+# Three keys with list of plugins: first, normal, last
+# Each will later get corresponding priority: plugFirst, plugNormal, plugLast
+has %!user-order;
 
-method !find-modules {
+# Maps short names to module and vice versa.
+has %!name-map;
+
+# Map of plugins into other plugins requiring them.
+has %!required-by;
+
+# Ordered list of plugins which takes into account priorities and dependencies
+has @!ordered;
+
+method name2fqn ( Str:D $name ) { %!name-map<name2fqn>{ $name } }
+method fqn2name ( Str:D $fqn  ) { %!name-map<fqn2name>{ $fqn }  }
+
+method normalize-name ( Str:D $plugin --> Str ) {
+    note "Checking if $plugin already defined";
+    return $plugin with %!mod-info{ $plugin };
+    note "Looking for $plugin in  name2fqn";
+    return $_ with self.name2fqn( $plugin );
+    note "Plugin not found: $plugin";
+    fail X::OO::Plugin::NotFound.new( :$plugin );
+}
+
+method meta ( Str:D $plugin --> Hash ) {
+    my $fqn = self.normalize-name( $plugin );
+    # $fqn would contain Failure if the name cannot be normalized.
+    return $fqn unless $fqn;
+
+    %!mod-info{ $fqn }<meta>.clone
+}
+
+method info ( Str:D $plugin --> Hash ) {
+    my $fqn = self.normalize-name( $plugin );
+    # $fqn would contain Failure if the name cannot be normalized.
+    return $fqn unless $fqn;
+
+    %!mod-info{ $fqn }.clone
+}
+
+proto method set-priority (|) {*}
+
+multi method set-priority ( @plugins, PlugPriority:D $priority = plugNormal ) {
+    %!mod-info{ self.normalize-name( $_ ) }<priority> = $priority for @plugins;
+}
+
+multi method set-priority ( Str:D $plugin, PlugPriority:D $priority = plugNormal ) {
+    samewith( @$plugin, $priority )
+}
+
+multi method set-priority ( *@plugins, PlugPriority:D :$priority = plugNormal ) {
+    samewith( @plugins, $priority )
+}
+
+method load-plugins ( --> True ) {
+    my @mods = self!find-modules;
+    MOD:
+    for @mods -> $mod {
+        with &!validator {
+            next MOD unless &!validator( $mod );
+        }
+        require ::($mod);
+
+        CATCH {
+            default {
+                note "Module load failed: ", ~$_, $_.backtrace.full;
+                self.disable( $mod, ~$_ ~ $_.backtrace );
+            }
+        }
+    }
+
+    for plugin-types() -> \type {
+        my $fqn = type.^name;
+        # Keys from plugin module's %meta override keys from the registry module
+
+        %!mod-info{ $fqn }<meta> = plugin-meta( type );
+
+        with type::<%meta> {
+
+            sub fix-meta ( %meta --> Hash(Seq) ) {
+                gather for %meta.keys -> $key {
+                    given $key {
+                        when 'after' | 'before' | 'requires' {
+                            take $key => %meta{ $key }.Array;
+                        }
+                        default {
+                            take $key => %meta{ $key };
+                        }
+                    }
+                }
+            }
+
+            %!mod-info{ $fqn }<meta>{ .keys } = .values with fix-meta( $_ );
+        }
+
+        %!mod-info{ $fqn }<type> = type;
+        %!mod-info{ $fqn }<version> = %!mod-info{ $fqn }<meta><version> // $_ with type.^ver;
+    }
+
+    self!rebuild-caches;
+
+    note Dump( %!mod-info, :!color, :skip-methods );
+}
+
+proto method disable (|) {*}
+
+multi method disable ( Str:D $plugin, Str:D $reason ) {
+    %!disabled{ $plugin } = $reason;
+}
+
+multi method disable ( @plugins, Str:D $reason ) {
+    %!disabled{ $_ } = $reason for @plugins;
+}
+
+multi method disable ( *@plugins, Str:D :$reason ) {
+    samewith( @plugins, $reason )
+}
+
+method disabled ( Str:D $name ) {
+    ? %!disabled{ $name }
+}
+
+method init {
+    for %!mod-info.keys -> $mod {
+        next if self.disabled( $mod );
+        my $plug = %!mod-info{$mod}<type>.new;
+    }
+}
+
+method !find-modules ( --> Array(Seq) ) {
     gather {
         for $*REPO.repo-chain -> $r {
             given $r {
@@ -42,24 +186,7 @@ method !find-modules {
                                     my $mod-name =
                                         $*SPEC.splitdir( $path.extension( "", joiner => "" ) )[ $dircount..* ]
                                               .join( '::' );
-                                    %!mod-info{ $mod-name } = {
-                                        prefix => $r.prefix;
-                                    }
-                                }
-                            }
-                            when / resources $ / {
-                                # When loading resources measures must be taken to avoid overriding other modules
-                                # metadata by allowing to have module names in PLUGIN.json other than the full path to
-                                # the file suggests.
-                                # For example, for ./lib/Some/Mod/resources/PLUGIN.json don't allow defining meta for
-                                # Another::Mod::*
-                                my $mod-prefix = $*SPEC.splitdir( $_ )[ $dircount..*-2 ].join('::') ~ "::";
-                                with $*SPEC.catfile( $_, $PLUGIN-JSON ).IO {
-                                    if .f {
-                                        my %meta = from-json( .open.slurp );
-                                        # Filter out non-conforming keys
-                                        %!mod-meta{ $_ } = %meta{ $_ } for grep { / ^ $mod-prefix / }, %meta.keys;
-                                    }
+                                    take $mod-name;
                                 }
                             }
                         }
@@ -69,19 +196,8 @@ method !find-modules {
                     next unless .installed;
                     my @bases = @.namespaces.map: { $!base ~ '::' ~ $_ };
                     for .installed -> $distro {
-                        my %meta;
-
-                        # Pre-load meta
-                        if $distro.meta<resources>.list.grep: $PLUGIN-JSON { # .content doesn't check for file existance
-                            %meta = from-json $distro.content( "resources/$PLUGIN-JSON" ).slurp;
-                        }
-
                         for $distro.meta<provides>.keys.grep( rx/ ^ @bases / ) -> $module {
-                            %!mod-info{ $module } = {
-                                    distro => $distro,
-                            };
-                            # Only fetch meta for installed modules, skip all other
-                            %!mod-meta{ $module } = $_ with %meta{ $module };
+                            take $module;
                         }
                     }
                 }
@@ -90,61 +206,52 @@ method !find-modules {
     }
 }
 
-method load-plugins {
-    self!find-modules;
-    MOD:
-    for %!mod-info.keys -> $mod {
-        note "Loading $mod";
-        with &!validator {
-            next MOD unless &!validator( $mod );
-        }
-        require ::($mod);
-        note "LOADED ", $mod;
+method !rebuild-caches {
+    self!rebuild-name-map;
+    self!rebuild-requirements;
+}
 
-        # Keys from plugin module's %meta override keys from JSON data
-        with ::("$mod\::\%meta") {
-            %!mod-meta{ $mod }{ .keys } = .values;
-        }
+method !rebuild-name-map {
+    # Map short name into FQN
+    %!name-map<short2fqn> = plugin-types.map( { .^shortname => .^name } ).Hash;
+    %!name-map<fqn2short> = %!name-map<short2fqn>.invert.Hash;
+}
 
-        # If class is not defined then use module name.
-        # NOTE: Mind the comment for %!mod-meta: we don't modify it!
-        %!mod-info{ $mod }<class> = %!mod-meta{ $mod }<class>;
-        %!mod-info{ $mod }<class> //= $mod if ::($mod).HOW ~~ Metamodel::ClassHOW;
+method !fill-priorities {
+    %!mod-info{$_}<priority> //= plugNormal for %!mod-info.keys;
+}
 
-        with %!mod-info{ $mod }<class> {
-            note "CLASS NAME IS ", $_;
-            my $type;
-            for ("", "$mod\::", "$mod\::EXPORT::DEFAULT::") -> $pfx {
-                last unless ( $type = ::("$pfx$_") ) ~~ Failure;
+method !pre-sort {
+    my @mods = %!mod-info.keys;
+
+    my $count = @mods.elems;
+
+    # Define priority ranges.
+    my $high = 0;
+    my $required = $high + $count;
+    my $normal = $required + $count;
+    my $low = $normal + $count;
+
+    my %levels = @mods.map( * => $normal++ ).Hash;
+
+    # For all required modules shift priority by count – thus they will effectively get into $required range.
+    %levels{ $_ } -= $count for %!required-by.keys;
+
+}
+
+# Rebuild %!required-by
+method !rebuild-requirements {
+    %!required-by = ();
+    for %!mod-info.keys -> $fqn {
+        with %!mod-info{$fqn}<meta><requires> {
+            note "$fqn requires: ", %!mod-info{$fqn}<meta><requires>;
+            %!required-by.append: .Array.map( { self.normalize-name($_) => $fqn } );
+            CATCH {
+                when X::OO::Plugin::NotFound {
+                    self.disable( $fqn, "Required plugin " ~ .plugin ~ " not found" );
+                }
+                default { .rethrow }
             }
-            %!mod-info{ $mod }<type> = $type;
-            note "CLASS: ", $type.WHAT;
-        } else {
-            note "DISABLING $mod: no class defined";
-            self.disable($mod, "Plugin class is not defined for this module");
         }
-
-        CATCH {
-            default {
-                self.disable( $mod, ~$_ ~ $_.backtrace );
-                note "DISABLING $mod: ", %!disabled{$mod};
-            }
-        }
-    }
-}
-
-method disable (Str:D $name, Str:D $reason) {
-    %!disabled{ $name } = $reason;
-}
-
-method disabled ( Str:D $name ) {
-    ? %!disabled{ $name }
-}
-
-method init {
-    for %!mod-info.keys -> $mod {
-        next if self.disabled( $mod );
-        my $plug = %!mod-info{$mod}<type>.new;
-        note "CREATED ", $plug.WHAT if $plug;
     }
 }
