@@ -1,10 +1,26 @@
 {
+  "authors": [
+    "Vadim Belman <vrurg@cpan.org>"
+  ],
+  "meta-version": "0",
+  "description": "IPv4/IPv6 manipulation",
+  "support": {
+    "source": "https://github.com/vrurg/Perl6-OO-Plugin.git"
+  },
   "test-depends": [
     "Test",
     "Test::META",
     "Test::When"
   ],
-  "production": false,
+  "depends": [
+    
+  ],
+  "version": "0.0.0",
+  "tags": [
+    "OO",
+    "Plugin",
+    "Plugins"
+  ],
   "build-depends": [
     "META6",
     "p6doc",
@@ -13,30 +29,14 @@
   "resources": [
     
   ],
-  "meta-version": "0",
-  "depends": [
-    "Pluggable"
-  ],
-  "description": "IPv4/IPv6 manipulation",
+  "license": "Artistic-2.0",
   "source-url": "git://github.com/vrurg/Perl6-OO-Plugin.git",
-  "perl": "6.*",
-  "tags": [
-    "OO",
-    "Plugin",
-    "Plugins"
-  ],
-  "authors": [
-    "Vadim Belman <vrurg@cpan.org>"
-  ],
+  "production": false,
   "name": "OO::Plugin",
+  "auth": "github:vrurg",
+  "perl": "6.*",
   "provides": {
     "OO::Plugin": "lib/OO/Plugin.pm6",
     "OO::Plugin::Manager": "lib/OO/Plugin/Manager.pm6"
-  },
-  "auth": "github:vrurg",
-  "license": "Artistic-2.0",
-  "support": {
-    "source": "https://github.com/vrurg/Perl6-OO-Plugin.git"
-  },
-  "version": "0.0.0"
+  }
 }

@@ -1,5 +1,5 @@
-use v6;
-unit class Manager:auth<CPAN:VRURG>:ver<0.0.0>:api<0>;
+use v6.d;
+unit class OO::Plugin::Manager:auth<CPAN:VRURG>:ver<0.0.0>:api<0>;
 use File::Find;
 use JSON::Fast;
 use Data::Dump;
@@ -14,16 +14,20 @@ my class X::OO::Plugin::NotFound is Exception {
     }
 }
 
-# constant $PLUGIN-JSON = "PLUGIN.json";
-
 enum PlugPriority is export <plugLast plugNormal plugFirst>;
 
 # --- ATTRIBUTES
 
+has Bool $.debug is rw = True;
+
 has Str $.base is required;
 has @.namespaces = <Plugin Plugins>;
 #| Callback to validate plugin module before trying to load it.
-has &.validator where * ~~ :( Str $ --> Bool );
+has &.validator is rw where * ~~ :( Str $ --> Bool );
+
+# List of hashes of:
+#  'Module::Name' => "Error String"
+has @.load-errors;
 
 # :moduleName("text reason")
 # Reason could later be extended if necessary to be a structure
@@ -50,18 +54,22 @@ has %!name-map;
 # Map of plugins into other plugins requiring them.
 has %!required-by;
 
-# Ordered list of plugins which takes into account priorities and dependencies
-has @!ordered;
+# Plugin objects – instantiated plugin classes.
+has @!objects;
+
+# Plugin registry instance
+has $!registry;
+
+submethod TWEAK {
+    $!registry = Plugin::Registry.instance;
+}
 
 method name2fqn ( Str:D $name ) { %!name-map<name2fqn>{ $name } }
 method fqn2name ( Str:D $fqn  ) { %!name-map<fqn2name>{ $fqn }  }
 
 method normalize-name ( Str:D $plugin --> Str ) {
-    note "Checking if $plugin already defined";
     return $plugin with %!mod-info{ $plugin };
-    note "Looking for $plugin in  name2fqn";
     return $_ with self.name2fqn( $plugin );
-    note "Plugin not found: $plugin";
     fail X::OO::Plugin::NotFound.new( :$plugin );
 }
 
@@ -106,17 +114,17 @@ method load-plugins ( --> True ) {
 
         CATCH {
             default {
-                note "Module load failed: ", ~$_, $_.backtrace.full;
-                self.disable( $mod, ~$_ ~ $_.backtrace );
+                note "Module load failed: ", ~$_, $_.backtrace.full if $!debug;
+                @!load-errors.push: $mod => ~$_ ~ ( $!debug ?? $_.backtrace !! "");
             }
         }
     }
 
-    for plugin-types() -> \type {
+    for $!registry.plugin-types -> \type {
         my $fqn = type.^name;
         # Keys from plugin module's %meta override keys from the registry module
 
-        %!mod-info{ $fqn }<meta> = plugin-meta( type );
+        %!mod-info{ $fqn }<meta> = $!registry.plugin-meta( type );
 
         with type::<%meta> {
 
@@ -141,18 +149,16 @@ method load-plugins ( --> True ) {
     }
 
     self!rebuild-caches;
-
-    note Dump( %!mod-info, :!color, :skip-methods );
 }
 
 proto method disable (|) {*}
 
 multi method disable ( Str:D $plugin, Str:D $reason ) {
-    %!disabled{ $plugin } = $reason;
+    %!disabled{ self.normalize-name: $plugin } = $reason;
 }
 
 multi method disable ( @plugins, Str:D $reason ) {
-    %!disabled{ $_ } = $reason for @plugins;
+    %!disabled{ self.normalize-name: $_ } = $reason for @plugins;
 }
 
 multi method disable ( *@plugins, Str:D :$reason ) {
@@ -160,14 +166,16 @@ multi method disable ( *@plugins, Str:D :$reason ) {
 }
 
 method disabled ( Str:D $name ) {
-    ? %!disabled{ $name }
+    %!disabled{ self.normalize-name: $name }
 }
 
-method init {
+method initialize ( --> Nil ) {
     for %!mod-info.keys -> $mod {
         next if self.disabled( $mod );
-        my $plug = %!mod-info{$mod}<type>.new;
+        @!objects.push: %!mod-info{ $mod }<type>.new( plugin-manager => self );
     }
+
+    note .WHAT for @!objects;
 }
 
 method !find-modules ( --> Array(Seq) ) {
@@ -213,12 +221,8 @@ method !rebuild-caches {
 
 method !rebuild-name-map {
     # Map short name into FQN
-    %!name-map<short2fqn> = plugin-types.map( { .^shortname => .^name } ).Hash;
+    %!name-map<short2fqn> = $!registry.plugin-types.map( { .^shortname => .^name } ).Hash;
     %!name-map<fqn2short> = %!name-map<short2fqn>.invert.Hash;
-}
-
-method !fill-priorities {
-    %!mod-info{$_}<priority> //= plugNormal for %!mod-info.keys;
 }
 
 method !pre-sort {

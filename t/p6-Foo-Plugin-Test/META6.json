@@ -21,7 +21,5 @@
     "source": "https://github.com/vrurg/Perl6-OO-Plugin.git"
   },
   "version": "0.0.1",
-  "resources": [
-    "PLUGIN.json"
-  ]
+  "resources": [ ]
 }

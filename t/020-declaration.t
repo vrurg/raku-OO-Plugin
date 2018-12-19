@@ -1,16 +1,24 @@
 use v6.d;
 use lib './t';
 
-module Some::Plugin::Probe {
-    use OO::Plugin;
+use OO::Plugin;
 
-    class Foo {}
+class Foo is pluggable {
+    method foo is pluggable {
+        note "method foo";
+    }
 
-    plugin MyPlugin is Foo {
-        has $.data;
+    proto method bar (|) is pluggable {*}
+    multi method bar ( Str:D $s ) { note "String $s" }
+    multi method bar ( Int:D $i ) { note "Int $i" }
+}
 
-        our %meta =
-            after => <Plug1>,
-            ;
+class Bar is Foo {
+    method bar (|c) {
+        note "Bar::bar";
+        callwith( |c );
     }
 }
+
+Bar.new.bar("aaa");
+Bar.new.bar(12);

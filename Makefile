@@ -17,7 +17,7 @@ DIST_FILES := $(git ls-files)
 CLEAN_FILES=$(MOD_NAME_PFX)-v*.tar.gz \
 			META6.json.out
 
-CLEAN_DIRS=lib/.precomp
+CLEAN_DIRS=lib/.precomp t/.precomp t/lib/.precomp build-tools/lib/.precomp .test-repo
 
 .PHONY: all readme html test author-test release-test \
 		clean-repo build depends release meta6_mod meta \

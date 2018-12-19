@@ -6,5 +6,5 @@ use OO::Plugin::Registry;
 method compose ( Mu \type, :$compiler_services ) {
     self.add_parent( type, Plugin );
     callsame;
-    register-plugin( type );
+    Plugin::Registry.instance.register-plugin( type );
 }
