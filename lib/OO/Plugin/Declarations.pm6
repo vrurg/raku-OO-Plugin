@@ -1,36 +1,62 @@
 use v6.d;
 unit module OO::Plugin::Declarations;
+use OO::Plugin::Class;
 use OO::Plugin::Registry;
+use OO::Plugin::Metamodel::PlugRoleHOW;
 use WhereList;
 
-multi trait_mod:<is> ( Routine:D $routine, :%wrapper! ) is export {
-    die "wrapper trait in its hash form requires 'class'" unless %wrapper<class>:exists;
-    Plugin::Registry.instance.register-wrapper( $routine, |%wrapper<class method> );
+my $pregistry = Plugin::Registry.instance;
+
+sub reg-plug-as-hash ( $routine, %plug, $position ) {
+    die "traits 'plug-' in their hash form require 'class' key" unless %plug<class>:exists;
+    $pregistry.register-plug( $routine, |%plug<class method>, :$position );
 }
 
-multi trait_mod:<is> ( Routine:D $routine, :$wrapper! is copy where * ~~ List | Pair ) is export {
-    note "WRAPPER: ", $wrapper.WHAT;
-    note "WRAPPER data: ", $wrapper.perl;
-    my $registry = Plugin::Registry.instance;
-    for $wrapper.List -> $w {
-        given $w {
+sub reg-plug ( $routine, $plug, $position ) {
+    for $plug.List -> $p {
+        given $p {
             when Pair {
-                $registry.register-wrapper( $routine, .key, .value )
+                $pregistry.register-plug( $routine, .key, .value, :$position )
             }
             when Str {
-                $registry.register-wrapper( $routine, $_ );
+                $pregistry.register-plug( $routine, $_, :$position );
             }
         }
     }
-    # note "DYN: ", $*PLUG-TEST;
+}
+
+multi trait_mod:<is> ( Routine:D $routine, :$plug-around! where * ~~ Hash ) is export {
+    reg-plug-as-hash( $routine, $plug-around, 'around' );
+}
+
+multi trait_mod:<is> ( Routine:D $routine, :$plug-before! where * ~~ Hash ) is export {
+    reg-plug-as-hash( $routine, $plug-before, 'before' );
+}
+
+multi trait_mod:<is> ( Routine:D $routine, :$plug-after! where * ~~ Hash ) is export {
+    reg-plug-as-hash( $routine, $plug-after, 'after' );
+}
+
+multi trait_mod:<is> ( Routine:D $routine, :$plug-around! is copy where * ~~ Positional | Pair ) is export {
+    reg-plug( $routine, $plug-around, 'around' );
+}
+
+multi trait_mod:<is> ( Routine:D $routine, :$plug-before! is copy where * ~~ Positional | Pair ) is export {
+    reg-plug( $routine, $plug-before, 'before' );
+}
+
+multi trait_mod:<is> ( Routine:D $routine, :$plug-after! is copy where * ~~ Positional | Pair ) is export {
+    reg-plug( $routine, $plug-after, 'after' );
+}
+
+multi trait_mod:<is> ( Mu:U \class where { $_.HOW ~~ OO::Plugin::Metamodel::PlugRoleHOW }, :$for! where * ~~ Positional | Str | Mu:U ) {
+    $pregistry.register-plug( class, $for.list.flat );
 }
 
 multi trait_mod:<is>( Method:D $method, :$pluggable! ) is export {
-    note "PLUGGABLE: ", $method.name, " from ", $method.package.^name, "/", $method.package.^shortname;
-    Plugin::Registry.instance.register-pluggable( $method );
+    $pregistry.register-pluggable( $method );
 }
 
 multi trait_mod:<is>( Mu:U \type, :$pluggable! ) is export {
-    note "PLUGGABLE CLASS: ", type.^name;
-    Plugin::Registry.instance.register-pluggable( type );
+    $pregistry.register-pluggable( type );
 }
