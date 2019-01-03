@@ -10,7 +10,9 @@ method new_type ( :$name, |params ) {
 
 method compose ( Mu \type, :$compiler_services ) {
     self.add_parent( type, Plugin );
-    my \rc = callsame;
-    Plugin::Registry.instance.register-plugin( type );
-    rc
+    my \ptype = callsame;
+    my $registry = Plugin::Registry.instance;
+    $registry.register-plugin( type );
+    $registry.plugin-meta( %*CURRENT-PLUGIN-META, ptype );
+    ptype
 }

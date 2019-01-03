@@ -36,6 +36,7 @@ sub EXPORT {
             :my $*PKGDECL := 'plugin';
             :my $*LINE_NO := HLL::Compiler.lineof(self.orig(), self.from(), :cache(1));
             :my $*CURRENT-PLUGIN-CLASS; # Must be set by corresponding HOW
+            :my %*CURRENT-PLUGIN-META;
             <sym><.kok> <package_def>
             <.set_braid_from(self)>
         }
@@ -48,6 +49,9 @@ sub EXPORT {
             :my @*PLUG-CLASS-EXTENDING;
             <sym><.kok>
             {
+                use nqp;
+                note "DECLARAND IN plug-class: ", $*DECLARAND.^name;
+                note "PACKAGE IN plug-class: ", $*PACKAGE.^name;
                 self.panic( "plug-class must only be declared within scope of a plugin" )
                     unless try $*CURRENT-PLUGIN-CLASS.HOW ~~ OO::Plugin::Metamodel::PluginHOW;
                 $*LANG.set_how('role', OO::Plugin::Metamodel::PlugRoleHOW);
@@ -61,8 +65,45 @@ sub EXPORT {
         }
 
         rule trait_mod:sym<for> {
-            [ <sym> { $*IN-PLUG-CLASS || self.panic( "modificator 'for' is only applicable to a plug-class" ) } ]
-            $<for-list>=( <longname> | <.panic("Expecting a class name here")> )+ % ','
+            [ <sym> {} <.in-plug-class( 'for' )> ]
+            <ptype-name-list( 'class' )>
+        }
+
+        token in-plug-class ( Mu $sym ) {
+            {
+                # Declarand is NQPMu upon trait declarations when in package declaration.
+                # NOTE We consider any NQP type in $*DECLARAND as 'uninitialized' because this is not a Perl6 role
+                # declaration by definition.
+                ( $*IN-PLUG-CLASS && !nqp::istype( $*DECLARAND, Mu ) ) || self.panic( "Modificator '$sym' is only applicable to a plug-class" )
+            }
+        }
+
+        rule trait_mod:sym<after> {
+            <sym> <.in-plugin( 'after' )>
+            <ptype-name-list('plugin')>
+        }
+
+        rule trait_mod:sym<before> {
+            <sym> <.in-plugin( 'before' )>
+            <ptype-name-list('plugin')>
+        }
+
+        rule trait_mod:sym<demand> {
+            <sym> <.in-plugin( 'demand' )>
+            <ptype-name-list('plugin')>
+        }
+
+        token in-plugin ( Str:D $sym ) {
+            {
+                # Declarand is NQPMu upon trait declarations when in package declaration.
+                # NOTE We consider any NQP type in $*DECLARAND as 'uninitialized' because this is not a Perl6 role
+                # declaration by definition.
+                ( $*PKGDECL eq 'plugin' and !nqp::istype( $*DECLARAND, Mu ) ) || self.panic( "Modificator '$sym' is only applicable to a plugin" )
+            }
+        }
+
+        rule ptype-name-list ( Mu:D $name-type ) {
+            ( <longname> | <.panic("Expecting a $name-type here")> )+ % ','
         }
     }
 
@@ -80,13 +121,24 @@ sub EXPORT {
             $/.make( mkey($/, 'package_def').ast );
         }
 
+        method ptype-name-list ( Mu $/ ) {
+            $/.make: $/.list[0].list.map: { mkey( $_, 'longname' ).Str };
+        }
+
         method trait_mod:sym<for> (Mu $/) {
-            my @for-list = mkey( $/, 'for-list' );
-            for @for-list -> $type {
-                with mkey( $type, 'longname' ) {
-                    @*PLUG-CLASS-EXTENDING.push: .Str;
-                }
-            }
+            @*PLUG-CLASS-EXTENDING.append: mkey( $/, 'ptype-name-list' ).ast;
+        }
+
+        method trait_mod:sym<after> ( Mu $/ ) {
+            %*CURRENT-PLUGIN-META<after>.append: mkey( $/, 'ptype-name-list' ).ast;
+        }
+
+        method trait_mod:sym<before> ( Mu $/ ) {
+            %*CURRENT-PLUGIN-META<before>.append: mkey( $/, 'ptype-name-list' ).ast;
+        }
+
+        method trait_mod:sym<demand> ( Mu $/ ) {
+            %*CURRENT-PLUGIN-META<demand>.append: mkey( $/, 'ptype-name-list' ).ast;
         }
     }
 

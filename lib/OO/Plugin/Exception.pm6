@@ -10,3 +10,11 @@ class CX::Plugin::Last does X::Control does X::Plugin {
 
     method message { "<last plug control exception>" }
 }
+
+class X::OO::Plugin::NotFound is Exception is export {
+    has Str:D $.plugin is required;
+
+    method message {
+        "No plugin '$!plugin' found"
+    }
+}

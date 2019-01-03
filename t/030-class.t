@@ -4,8 +4,6 @@ use lib './t';
 use Test;
 use OO::Plugin::Manager;
 
-BEGIN note "LANG: ", $*LANG.slang_grammar('MAIN').^name;
-
 module Tester {
 class Foo is pluggable {
     method foo is pluggable {
@@ -22,7 +20,8 @@ class A2 is pluggable {
 
 }
 
-plugin Fubar {
+plugin Fubar demand PluginA, PluginB {
+    plugin-meta demand => 'PluginC', name => 'Fubarus';
     plug-class Bar for Tester::Foo, A1, A2 is for( <Foo Another>, Foo ) {
         method bar (|) {
             note $?PACKAGE.^name, "::", &?ROUTINE.name;
@@ -31,7 +30,7 @@ plugin Fubar {
     }
 }
 
-plugin Чудернацький {
+plugin Чудернацький after Fubar, P1, P2 {
     plug-class Працівник for Tester::Foo {
         method bar (|) {
             note "Працює ", $?PACKAGE.^name, "::", &?ROUTINE.name;

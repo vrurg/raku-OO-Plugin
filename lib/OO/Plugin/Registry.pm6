@@ -7,6 +7,8 @@ package OO::Plugin::Registry::_classes { } # For pluggable classes
 subset PlugPosition of Str:D where * ~~ any <before around after>;
 
 class Plugin::Registry is export {
+    use OO::Plugin::Exception;
+
     has %!registry;
 
     my $instance;
@@ -30,14 +32,43 @@ class Plugin::Registry is export {
         OO::Plugin::Registry::_plugins::.values;
     }
 
-    proto method plugin-meta (|) {*}
-    multi method plugin-meta ( %meta, Mu:U $class ) {
-        die "Can't register meta for {$class.^name} which is not a Plugin" unless $class ~~ Plugin;
-
-        %!registry<meta>{ $class.^name }{ .keys } = .values with %meta;
+    method plugin-type ( Str:D $plugin --> Plugin:U ) {
+        fail X::OO::Plugin::NotFound.new( :$plugin ) unless OO::Plugin::Registry::_plugins::{$plugin}:exists;
+        OO::Plugin::Registry::_plugins::{$plugin}
     }
-    multi method plugin-meta ( Str:D $plugin ) { %!registry<meta>{ $plugin } }
-    multi method plugin-meta ( Plugin:U $plugin ) { %!registry<meta>{ $plugin.^name } }
+
+    proto method plugin-meta (|) {*}
+    multi method plugin-meta ( %meta, Mu:U \type ) {
+        die "Can't register meta for {type.^name} which is not a Plugin" unless type ~~ Plugin;
+
+        my $pname = type.^name;
+
+        # The order of setting meta data for a plugin is:
+        # 1. decalaration (plugin Foo after/before/demand)
+        # 2. plugin-meta call from within plugin block.
+        # 3. %meta hash in plugin block.
+        # The priority of data lowers from top to bottom. Thus, keys defained on later stages must not override keys
+        # from earlier ones.
+
+        for %meta.keys -> $key {
+            next if %!registry<meta>{$pname}{$key}:exists;
+            given $key {
+                when any <after before demand> {
+                    %!registry<meta>{$pname}{$key} ∪= %meta{$key}.list;
+                }
+                default {
+                    %!registry<meta>{$pname}{$key} = %meta{$key};
+                }
+            }
+        }
+    }
+    multi method plugin-meta ( Str:D $plugin --> Hash:D ) {
+        self!deep-clone( %!registry<meta>{ self.short2fqn( :$plugin ) } // {} )
+    }
+    multi method plugin-meta ( Str:D :$fqn! --> Hash:D ) {
+        self!deep-clone( %!registry<meta>{ $fqn } // {} )
+    }
+    multi method plugin-meta ( Plugin:U $plugin ) { samewith( $plugin.^name ) }
 
     proto method register-pluggable (|) {*}
     multi method register-pluggable ( Method:D $method ) {
@@ -114,13 +145,13 @@ class Plugin::Registry is export {
     }
 
     proto method short2fqn (|) {*}
-    multi method short2fqn ( Str:D $what, Str:D $name ) {
+    multi method short2fqn ( Str:D $what, Str:D $name --> Str:D ) {
         self!build-name-map;
         %!registry<name-map>{ $what }<short2fqn>{ $name } // $name
     }
-    multi method short2fqn ( *%what ) {
+    multi method short2fqn ( *%what where *.keys.elems == 1 --> Str:D ) {
         for %what.kv -> $what, $name {
-            samewith( $what, $name );
+            return samewith( $what, $name );
         }
     }
 
@@ -160,6 +191,7 @@ class Plugin::Registry is export {
             my %map;
             %map<short2fqn> = @type-list.map( { .^shortname => .^name } ).Hash;
             %map<fqn2short> = %map<short2fqn>.invert.Hash;
+            # note "NAME MAP:", %map;
             %map
         }
 
