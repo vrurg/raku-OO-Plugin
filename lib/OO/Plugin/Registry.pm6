@@ -233,7 +233,7 @@ class Plugin::Registry is export {
 
     method extended-classes ( --> Hash:D ) {
         self!build-extended-classes unless %!registry<extended-classes>:exists;
-        self!deep-clone( %!registry<extended-classes> )
+        self!deep-clone( %!registry<extended-classes> // {} )
     }
 
     method plug-classes ( --> Hash:D ) {

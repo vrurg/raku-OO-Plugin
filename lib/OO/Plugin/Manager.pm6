@@ -581,6 +581,8 @@ method !build-class ( Mu:U \type --> Mu:U ) {
     my $wrapper-name = self!autogen-class-name( $type-name );
     my \wtype = Metamodel::ClassHOW.new_type( name => $wrapper-name );
 
+    my $plugin-manager = self;
+
     self!build-class-chain( wtype, type );
 
     for %methods.keys -> $mname {
@@ -615,9 +617,13 @@ method !build-class ( Mu:U \type --> Mu:U ) {
                 :method($mname),
             );
 
+            STAGE:
             for <before around after> -> $stage {
 
+                my Bool $redo-stage = False;
+
                 $record.stage = $stage;
+                $plugin-manager!dbg: "&&& AT STAGE $stage";
 
                 if %routines{ $stage } {
                     for %routines{ $stage }.List -> $r {
@@ -626,7 +632,26 @@ method !build-class ( Mu:U \type --> Mu:U ) {
 
                         $record.private = %by-plugin{ $r<plugin-fqn> };
 
-                        $r<plugin-obj>.&( $r<routine> )( $record );
+                        my &routine := $r<routine>;
+                        my $params = &routine.signature.params;
+                        my $invocant-count = &routine ~~ Method ?? 1 !! 0; # Where the first non-invocant param starts
+                        my $param-last = $params.end;
+                        # If proto doesn't have | in its signature then dummy named parameter %_ of type Mu is
+                        # implicitly added to the end.
+                        $param-last-- if $params[$param-last].type ~~ Mu and $params[$param-last].named;
+
+                        # Call multi-method
+                        $plugin-manager!dbg: "&&& EXECUTE HANDLER ", $r<plugin-obj>.^name, "::", &routine.name;
+
+                        if ( not &routine.is_dispatcher )
+                            || ( ( $param-last == $invocant-count )
+                                && ( $params[$param-last].type ~~ Any )
+                                && ( not $params[$param-last].name ) ) {
+                            $r<plugin-obj>.&routine( $record );
+                        }
+                        else {
+                            $r<plugin-obj>.&routine( $record, |params );
+                        }
 
                         %by-plugin{ $r<plugin-fqn> } = $record.private; # Remember what's been set by the plugin (if was)
                         $record.private = Nil; # Just be on the safe side...
@@ -639,8 +664,13 @@ method !build-class ( Mu:U \type --> Mu:U ) {
 
                     CATCH {
                         when CX::Plugin::Last {
-                            # self!dbg: "*** 'LAST' CONTROL RAISED BY ", $_.plugin.^name;
+                            $plugin-manager!dbg: "*** 'LAST' CONTROL RAISED BY ", $_.plugin.^name;
                             $record.set-rc( $_.rc ) unless $stage ~~ 'before';
+                        }
+                        when CX::Plugin::Redo {
+                            $plugin-manager!dbg: "*** 'REDO' CONTROL RAISED BY ", $_.plugin.^name;
+                            $redo-stage = True;
+                            .resume
                         }
                         default { $_.rethrow }
                     }
@@ -656,6 +686,8 @@ method !build-class ( Mu:U \type --> Mu:U ) {
                         }
                     }
                 }
+
+                redo if $redo-stage;
             }
 
             $record.rc

@@ -19,6 +19,12 @@ module OO::Plugin:ver<0.0.0>:auth<cpan:VRURG> {
             :$rc,
         ).throw
     }
+
+    sub plug-redo is export {
+        CX::Plugin::Redo.new(
+            plugin => $*CURRENT-PLUGIN,
+        ).throw
+    }
 }
 
 sub EXPORT {

@@ -6,13 +6,14 @@ use OO::Plugin::Manager;
 use OO::Plugin;
 use Data::Dump;
 
-ok install-distro( './t/p6-Foo-Plugin-Test' ), "test plugin installed";
-#END wipe-repo;
+plan 2;
 
-require ::("Foo::Plugin::Test");
-my \tt = ::("Foo::Plugin::Test");
-note ">>>>", tt::.keys;
-note "----", ::("Foo::Plugin")::Test.keys;
+ok install-distro( './t/p6-Foo-Plugin-Test' ), "test plugin installed";
+
+# require ::("Foo::Plugin::Test");
+# my \tt = ::("Foo::Plugin::Test");
+# note ">>>>", tt::.keys;
+# note "----", ::("Foo::Plugin")::Test.keys;
 # note "++++", Foo::Plugin::Test.keys;
 
 my $mgr = OO::Plugin::Manager.new( base => 'Foo' );
@@ -24,4 +25,9 @@ $mgr.load-plugins;
 
 $mgr.initialize;
 
+my $registry = Plugin::Registry.instance;
+
+ok <Sample TestPlug1 TestPlugin Plug2>.Set == $registry.plugin-types.map( { $mgr.short-name( $_.^name ) } ).Set, "plugin modules are loaded";
+
+done-testing;
 # vim: ft=perl6
