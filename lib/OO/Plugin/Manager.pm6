@@ -82,13 +82,13 @@ submethod TWEAK {
 
 # Only works with plugin names currently. But might be extended to other entities if necessary.
 proto method normalize-name (|) {*}
-# Normalize plugin name by default
+# Normalize plugin name by default. Returns its argument if no mapping found and :!strict is used
 multi method normalize-name ( Str:D $plugin, Bool :$strict = True --> Str:D ) {
     return $plugin with %!mod-info{ $plugin }; # The name is already FQN
     my @name = %!short2fqn{ $plugin }.keys;
     unless @name {
         return $plugin unless $strict;
-        fail "No FQN for short plugin name '$plugin'";
+        fail "No FQN for short plugin name '$plugin'; was it installed?";
     }
     fail "Short plugin name '$plugin' maps into more than one FQN" if @name.elems > 1;
     @name[0]
@@ -162,16 +162,16 @@ method load-plugins ( --> ::?CLASS:D ) {
         with &!validator {
             next MOD unless &!validator( $mod );
         }
-        # self!dbg: "++++++++ TRYING $mod";
         require ::($mod);
 
         CATCH {
             default {
-                # self!dbg: "Module load failed:\n", ~$_, $_.backtrace.full, "----------------------" if $!debug;
+                self!dbg: "Module load failed:\n", ~$_, $_.backtrace.full, "----------------------" if $!debug;
                 @!load-errors.push: $mod => ~$_ ~ ( $!debug ?? $_.backtrace !! "");
             }
         }
     }
+    self!dbg: "Loaded plugins";
     self
 }
 
@@ -189,6 +189,7 @@ method initialize ( --> ::?CLASS:D ) {
         %!mod-info{ $fqn }<version> = %mod-meta<version> // $_ with type.^ver;
         %!mod-info{ $fqn }<shortname> = %mod-meta<name> // $shortname;
         %!mod-info{ $fqn }<priority> //= plugNormal;
+        %!mod-info{ $fqn }<type> = type;
     }
 
     self!rebuild-short2fqn;
@@ -242,7 +243,7 @@ multi method disable ( *@plugins, Str:D :$reason ) {
 
 proto method disabled (|) {*}
 multi method disabled ( Str:D $name ) {
-    %!disabled{ self.normalize-name: $name }
+    %!disabled{ self.normalize-name( $name, :!strict ) }
 }
 multi method disabled ( Str:D :$fqn! ) {
     %!disabled{ $fqn }
@@ -259,7 +260,8 @@ method order { @!order.clone }
 
 # Returns true if plugin is registered with this manager
 method has-plugin ( Str:D $plugin --> Bool ) {
-    %!mod-info{ self.normalize-name( $plugin, :!strict ) }:exists
+    %!mod-info{ $plugin }:exists
+        or ( %!short2fqn{ $plugin }:exists and %!short2fqn{ $plugin }.elems > 0 )
 }
 
 # Returns a Seq of ordered plugin objects
@@ -392,15 +394,15 @@ method !topo-sort ( @mods ) {
                 my $demands = $dt eq 'demand'; # Just a shortcut.
             DEPENDENCY:
                 for %deps{$dt}.keys -> $p {
-                    my $snp = self.short-name: $p;
+                    my $snp = try { self.short-name: $p } // $p;
                     msg "??? Trying DEP $snp";
                     next DEPENDENCY if %SEEN{ $p } ~~ tpsFinal;
                     my $bad-dep-msg;
-                    msg "??? DISABLED $snp? ", self.disabled($p) // "NO";
                     if !self.has-plugin($p) { # Check if dependecy actually exists
                         $bad-dep-msg = "Demands missing '$snp' plugin";
                     }
                     elsif self.disabled( $p ) {
+                        msg "... DISABLED $snp ";
                         $bad-dep-msg = "Demands disabled '$snp' plugin";
                     }
                     with $bad-dep-msg {
@@ -512,10 +514,11 @@ method !topo-sort ( @mods ) {
 
 method !build-order {
     # Will later do sorting, etc. For now just get in any order skipping all disabled
+    self!dbg: "build-order";
     my @mods = self!pre-sort;
     self!dbg: "PRE-SORT:", @mods.map({self.short-name: $_}).join(" → ");
     @!order = self!topo-sort( @mods ); # XXX Don't forget to change!
-    self!dbg: "FINAL ORDER: ", @!order;
+    self!dbg: "FINAL ORDER: ", @!order.join( " → " );
 }
 
 method !autogen-class-name ( Str:D $base ) {
@@ -537,13 +540,13 @@ method !build-class-chain ( Mu:U \wtype, Mu:U \type --> Mu:U ) {
     my $last-class := type;
 
     if %type-ext {
-        for @!order -> $fqn {
+        # Higher-priority plugins must have their classes first in MRO
+        for @!order.reverse -> $fqn {
             # self!dbg: "??? TYPE EXT for $type-name of $fqn: ", %type-ext;
             with %type-ext{ $fqn } {
                 for $_.list -> \plug-class {
-                    # self!dbg: " Plugin $fqn extends $type-name with ", plug-class.^name, " // ", plug-class.HOW;
+                    self!dbg: "... Plugin $fqn extends $type-name with ", plug-class.^name, " // ", plug-class.HOW;
                     my $name = self!autogen-class-name( plug-class.^name );
-                    # self!dbg: "AUTOGEN CLASS: ", $name;
                     my \pclass = Metamodel::ClassHOW.new_type( :$name );
                     pclass.^add_parent( $last-class );
                     pclass.^add_role( plug-class );
@@ -709,6 +712,8 @@ method !rebuild-short2fqn ( --> Nil ) {
     %!short2fqn = ();
     %!mod-info.kv.map: -> $fqn, %info {
         %!short2fqn{ %info<shortname> } ∪= $fqn;
+        # ... because <shortname> might have source in plugin meta.
+        %!short2fqn{ %info<type>.^shortname }      ∪= $fqn;
     };
 }
 
