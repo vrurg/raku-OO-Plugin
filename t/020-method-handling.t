@@ -52,8 +52,6 @@ plugin Baz before Bar {
         }
     }
 
-    my PlugRecord $rr;
-
     # The declaration:
     #
     # proto method fubar ( $ ) is plug-around(:Foo<foo>) {*}

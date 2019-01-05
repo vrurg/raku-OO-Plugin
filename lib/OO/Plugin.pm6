@@ -56,8 +56,8 @@ sub EXPORT {
             <sym><.kok>
             {
                 use nqp;
-                note "DECLARAND IN plug-class: ", $*DECLARAND.^name;
-                note "PACKAGE IN plug-class: ", $*PACKAGE.^name;
+                # note "DECLARAND IN plug-class: ", $*DECLARAND.^name;
+                # note "PACKAGE IN plug-class: ", $*PACKAGE.^name;
                 self.panic( "plug-class must only be declared within scope of a plugin" )
                     unless try $*CURRENT-PLUGIN-CLASS.HOW ~~ OO::Plugin::Metamodel::PluginHOW;
                 $*LANG.set_how('role', OO::Plugin::Metamodel::PlugRoleHOW);

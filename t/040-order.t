@@ -294,7 +294,7 @@ for @variants -> %variant {
         my %n2i = (^@plugins.elems).map( { @plugins[$_].^name => $_ } );
         # note (^@plugins.elems).map( { $_ ~ ":" ~ @plugins[$_].^name } ).join(", ");
         my @idx-order = $mgr.order.map( { %n2i{$_} } );
-        diag "Final order: " ~ @idx-order.join(", ");
+        # diag "Final order: " ~ @idx-order.join(", ");
         bail-out "Duplicate entries in sort result, major algorithm failure"
             if Bag.new( @idx-order ).values.grep( * > 1 ).elems > 0;
         my %idx-map = ( ^@idx-order.elems ).map: { @idx-order[$_] => $_ };
