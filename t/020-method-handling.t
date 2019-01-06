@@ -18,36 +18,36 @@ class Foo is pluggable {
 }
 
 plugin Bar {
-    method bar ( $record ) is plug-before( 'Foo' => 'bar' ) {
+    method bar ( $msg ) is plug-before( 'Foo' => 'bar' ) {
         pass 'before &Foo::bar';
-        $record.private = { :mine<private string> };
-        $record.shared<Bar> = "Do me a favor, please!";
+        $msg.private = { :mine<private string> };
+        $msg.shared<Bar> = "Do me a favor, please!";
     }
 
-    method a-bar ( $record ) is plug-around( :Foo<bar> ) {
+    method a-bar ( $msg ) is plug-around( :Foo<bar> ) {
         pass 'around &Foo::bar';
-        is $record.private<mine>, 'private string', "private value is passed between method handlers";
-        my $param = $record.params.list[0];
+        is $msg.private<mine>, 'private string', "private value is passed between method handlers";
+        my $param = $msg.params.list[0];
         plug-last "KA-BOOM!" if $param ~~ Int and $param !~~ 42; # Not The Right Answer
     }
 
-    method foo ( $record ) is plug-around( :Foo<foo> ) {
+    method foo ( $msg ) is plug-around( :Foo<foo> ) {
         pass 'around &Foo::foo';
-        $record.set-rc( 42 ); # This will prevent the original method from being called
+        $msg.set-rc( 42 ); # This will prevent the original method from being called
     }
 }
 
 plugin Baz before Bar {
-    method a-bar ( $record ) is plug-after( :Foo<bar> ) is plug-before( :Foo<bar> ){
-        pass "stage {$record.stage} of \&Foo::bar";
-        # note "? DO SOME {$record.stage} work for Foo::bar";
-        nok $record.private.defined, "private is not set in this plugin";
-        given $record.stage {
+    method a-bar ( $msg ) is plug-after( :Foo<bar> ) is plug-before( :Foo<bar> ){
+        pass "stage {$msg.stage} of \&Foo::bar";
+        # note "? DO SOME {$msg.stage} work for Foo::bar";
+        nok $msg.private.defined, "private is not set in this plugin";
+        given $msg.stage {
             when 'before' {
-                is-deeply $record.shared, {}, "shared data comes from Bar plugin, but it's not called yet";
+                is-deeply $msg.shared, {}, "shared data comes from Bar plugin, but it's not called yet";
             }
             when 'after' {
-                is $record.shared<Bar>, "Do me a favor, please!", "shared data comes from Bar plugin";
+                is $msg.shared<Bar>, "Do me a favor, please!", "shared data comes from Bar plugin";
             }
         }
     }
@@ -56,28 +56,28 @@ plugin Baz before Bar {
     #
     # proto method fubar ( $ ) is plug-around(:Foo<foo>) {*}
     #
-    # means passing only of PlugRecord instance. Anything else will cause the handler to receive all method arguments
-    # following the $record. This would simplify dispatching.
+    # means passing only of PluginMessage instance. Anything else will cause the handler to receive all method arguments
+    # following the $msg. This would simplify dispatching.
     proto method fubar ( $, | ) is plug-around(:Foo<foo>) {*}
-    multi method fubar ( $record ) {
+    multi method fubar ( $msg ) {
         pass "multi-dispatch around handler of foo: no parameters";
     }
-    multi method fubar ( $record, Str $s ) {
+    multi method fubar ( $msg, Str $s ) {
         pass "multi-dispatch around handler of foo: string parameter";
-        if $record.private<passed> {
+        if $msg.private<passed> {
             pass "second-pass after redo";
         }
         else {
-            $record.private<passed> = True;
+            $msg.private<passed> = True;
             pass "initiating plug-redo";
             plug-redo;
         }
     }
 
-    method a-foo ( $record ) is plug-after( :Foo<foo> ) {
-        if $record.private<passed> {
+    method a-foo ( $msg ) is plug-after( :Foo<foo> ) {
+        if $msg.private<passed> {
             pass "after Foo::foo handler modifies return value after REDO";
-            $record.set-rc( "The answer is " ~ $record.rc );
+            $msg.set-rc( "The answer is " ~ $msg.rc );
         }
     }
 }

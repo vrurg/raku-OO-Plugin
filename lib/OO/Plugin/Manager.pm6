@@ -256,6 +256,56 @@ method enabled (|c) {
     ! self.disabled(|c)
 }
 
+method callback( Str:D $cb-name where ? *, |params ) {
+    my PluginMessage $msg .= new: params => params;
+    my \cb-params = \( $cb-name, $msg, |params );
+
+    my %by-plugin; # Plugin private data
+
+  CALLBACKS:
+    for @!order.map: { %!objects{ $_ } } -> $pobj {
+        my $*CURRENT-PLUGIN = $pobj;
+        my $loop-action;
+        my $fqn = $pobj.^name;
+        $msg.private = %by-plugin{ $fqn };
+
+        self!dbg: "&&& CAPTURE: ", cb-params.perl;
+        self!dbg: "&&& CAN    : ", $pobj.^can('on-callback')[0].is_dispatcher;
+        self!dbg: "&&& CANDO  : ", $pobj.^can('on-callback')[0].cando( \( $pobj, |cb-params ) );
+        if $pobj.^can('on-callback')[0].cando( \( $pobj, |cb-params ) ) {
+            self!dbg: "&&& EXECUTE CALLBACK $cb-name";
+            my $rc = $pobj.on-callback( |cb-params );
+            $msg.set-rc( $_ ) with $rc;
+
+            CATCH {
+                self!dbg: "!!! CAUGHT ", $_.perl;
+                when CX::Plugin::Last | CX::Plugin::Redo {
+                    $loop-action = $_;
+                }
+                default { .rethrow }
+            }
+        }
+
+        %by-plugin{ $fqn } = $msg.private;
+        $msg.private = Nil;
+
+        given $loop-action {
+            when CX::Plugin::Last {
+                self!dbg: "!!! LAST EXCEPTION, RC==", $msg.rc;
+                $msg.set-rc( .rc );
+                last CALLBACKS
+            }
+            when CX::Plugin::Redo {
+                redo CALLBACKS
+            }
+        }
+    }
+
+    return $msg.rc;
+}
+
+method cb (|c) { self.callback( |c ) }
+
 method order { @!order.clone }
 
 # Returns true if plugin is registered with this manager
@@ -611,12 +661,11 @@ method !build-class ( Mu:U \type --> Mu:U ) {
         my &plug-method = my method ( |params ) {
             my &callee = nextcallee;
             # self!dbg: "Wrapper for method $mname on ", self.WHICH;
-            my ( %shared, %by-plugin );
+            my ( %by-plugin );
 
-            my PlugRecord $record .= new(
+            my MethodHandlerMsg $msg .= new(
                 :object(self),
                 :params(params),
-                :%shared,
                 :method($mname),
             );
 
@@ -625,7 +674,7 @@ method !build-class ( Mu:U \type --> Mu:U ) {
 
                 my Bool $redo-stage = False;
 
-                $record.stage = $stage;
+                $msg.stage = $stage;
                 $plugin-manager!dbg: "&&& AT STAGE $stage";
 
                 if %routines{ $stage } {
@@ -633,7 +682,7 @@ method !build-class ( Mu:U \type --> Mu:U ) {
                         # This is where we actually call plugs.
                         my $*CURRENT-PLUGIN = $r<plugin-obj>;
 
-                        $record.private = %by-plugin{ $r<plugin-fqn> };
+                        $msg.private = %by-plugin{ $r<plugin-fqn> };
 
                         my &routine := $r<routine>;
                         my $params = &routine.signature.params;
@@ -650,25 +699,25 @@ method !build-class ( Mu:U \type --> Mu:U ) {
                             || ( ( $param-last == $invocant-count )
                                 && ( $params[$param-last].type ~~ Any )
                                 && ( not $params[$param-last].name ) ) {
-                            $r<plugin-obj>.&routine( $record );
+                            $r<plugin-obj>.&routine( $msg );
                         }
                         else {
-                            $r<plugin-obj>.&routine( $record, |params );
+                            $r<plugin-obj>.&routine( $msg, |params );
                         }
 
-                        %by-plugin{ $r<plugin-fqn> } = $record.private; # Remember what's been set by the plugin (if was)
-                        $record.private = Nil; # Just be on the safe side...
+                        %by-plugin{ $r<plugin-fqn> } = $msg.private; # Remember what's been set by the plugin (if was)
+                        $msg.private = Nil; # Just be on the safe side...
 
-                        if $record.has-rc and $stage ~~ 'before' {
+                        if $msg.has-rc and $stage ~~ 'before' {
                             warn "Plugin `$r<plugin-fqn>` set return value for method $mname at 'before' stage";
-                            $record.reset-rc;
+                            $msg.reset-rc;
                         }
                     }
 
                     CATCH {
                         when CX::Plugin::Last {
                             $plugin-manager!dbg: "*** 'LAST' CONTROL RAISED BY ", $_.plugin.^name;
-                            $record.set-rc( $_.rc ) unless $stage ~~ 'before';
+                            $msg.set-rc( $_.rc ) unless $stage ~~ 'before';
                         }
                         when CX::Plugin::Redo {
                             $plugin-manager!dbg: "*** 'REDO' CONTROL RAISED BY ", $_.plugin.^name;
@@ -682,10 +731,10 @@ method !build-class ( Mu:U \type --> Mu:U ) {
                 given $stage {
                     when 'around' {
                         # Only call the original method if no rc is set.
-                        if !$record.has-rc {
+                        if !$msg.has-rc {
                             # self!dbg: "Refer to the original";
                             # self!dbg: "PARAMS: ", params;
-                            $record.set-rc( self.&callee( |$record.params ) );
+                            $msg.set-rc( self.&callee( |$msg.params ) );
                         }
                     }
                 }
@@ -693,7 +742,7 @@ method !build-class ( Mu:U \type --> Mu:U ) {
                 redo if $redo-stage;
             }
 
-            $record.rc
+            $msg.rc
         };
         # --- WRAPPING METHOD GENERATION ENDS
 

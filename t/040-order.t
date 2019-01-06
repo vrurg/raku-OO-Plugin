@@ -3,7 +3,6 @@ use lib './t';
 use Test;
 use OO::Plugin;
 use OO::Plugin::Manager;
-use OO::Plugin::Metamodel::PluginHOW;
 
 sub gen-plugin( %params --> Array ) {
     my $count = %params<count>;
@@ -322,3 +321,4 @@ for @variants -> %variant {
 }
 
 done-testing;
+# vim: ft=perl6

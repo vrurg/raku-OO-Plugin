@@ -1,4 +1,11 @@
 use v6;
+BEGIN {
+    # Test plugin distro must be pre-installed before anything else or it won't be found by plugin manager.
+    use lib 'build-tools/lib';
+    use OOPTest;
+    use Test;
+    install-distro( './t/p6-Foo-Plugin-Test' ) or flunk "failed to install plugin distro";
+}
 use lib <t/lib build-tools/lib inst#.test-repo>;
 use Test;
 use OOPTest;
@@ -6,9 +13,7 @@ use OO::Plugin::Manager;
 use OO::Plugin;
 use Data::Dump;
 
-plan 2;
-
-ok install-distro( './t/p6-Foo-Plugin-Test' ), "test plugin installed";
+plan 1;
 
 # require ::("Foo::Plugin::Test");
 # my \tt = ::("Foo::Plugin::Test");

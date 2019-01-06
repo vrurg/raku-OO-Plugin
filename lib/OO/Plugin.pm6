@@ -160,8 +160,9 @@ sub EXPORT {
 
     return %(
         OO::Plugin::Declarations::EXPORT::ALL::,
-        'Plugin' => Plugin,
-        'PlugRecord' => PlugRecord,
+        Plugin => Plugin,
+        PluginMessage => PluginMessage,
+        MethodHandlerMsg => MethodHandlerMsg,
         # '&plugin-meta' => &OO::Plugin::plugin-meta,
     );
 }
