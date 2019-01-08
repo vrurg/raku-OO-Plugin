@@ -48,3 +48,5 @@ is $mgr.cb('cb-test2' ), pi, "second callback return value from CB2";
 is $mgr.cb('cb-test3' ), "CB2", "CB2 overrides CB1's return value";
 
 done-testing;
+
+# vim: ft=perl6

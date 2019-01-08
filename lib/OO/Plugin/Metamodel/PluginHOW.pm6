@@ -5,11 +5,12 @@ use OO::Plugin::Registry;
 
 method new_type ( :$name, |params ) {
     # In hope that compilation doesn't take advantage of multi-threading...
-    $*CURRENT-PLUGIN-CLASS = callsame
+    $*CURRENT-PLUGIN-CLASS := callsame;
+    $*CURRENT-PLUGIN-CLASS.^add_parent( Plugin );
+    $*CURRENT-PLUGIN-CLASS
 }
 
 method compose ( Mu \type, :$compiler_services ) {
-    self.add_parent( type, Plugin );
     my \ptype = callsame;
     my $registry = Plugin::Registry.instance;
     $registry.register-plugin( type );

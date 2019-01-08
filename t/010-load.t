@@ -35,4 +35,5 @@ my $registry = Plugin::Registry.instance;
 ok <Sample TestPlug1 TestPlugin Plug2>.Set == $registry.plugin-types.map( { $mgr.short-name( $_.^name ) } ).Set, "plugin modules are loaded";
 
 done-testing;
+
 # vim: ft=perl6

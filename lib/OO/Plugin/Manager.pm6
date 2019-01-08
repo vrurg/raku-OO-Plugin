@@ -10,6 +10,15 @@ use OO::Plugin::Exception;
 
 enum PlugPriority is export <plugLast plugNormal plugFirst>;
 
+my class EventPacket {
+    # Event name
+    has Str:D $.name is required;
+    # Parameters the method has been called with
+    has Capture:D $.params is rw is required;
+    # Completion promise vow
+    has $.vow;
+}
+
 # --- ATTRIBUTES
 
 has Bool $.debug is rw = False;
@@ -72,6 +81,15 @@ has $!registry;
 # Caches
 has %!cached;
 
+# Event management block.
+has Promise $!event-dispatcher;
+has Channel $!event-queue;
+has Lock $!ev-dispatch-lock .= new;
+# Number of simulatenous event handlers running
+has Int:D $.event-workers where * > 0 = 3;
+# Number of seconds for the dispatcher to wait for another event after processing one.
+has Real:D $.ev-dispatcher-timeout = 1.0;
+
 submethod TWEAK {
     $!registry = Plugin::Registry.instance;
 }
@@ -97,8 +115,15 @@ multi method normalize-name ( Str:D :$plugin! --> Str:D ) {
     samewith( $plugin )
 }
 
-method short-name ( Str:D $name ) {
+proto method short-name (|) {*}
+multi method short-name ( Str:D $name ) {
     %!mod-info{ self.normalize-name( $name ) }<shortname>
+}
+multi method short-name ( Str:D :$fqn ) {
+    %!mod-info{ $fqn }<shortname>
+}
+multi method short-name ( Plugin:U \ptype ) {
+    %!mod-info{ ptype.^name }<shortname>
 }
 
 proto method meta (|) {*}
@@ -175,7 +200,7 @@ method load-plugins ( --> ::?CLASS:D ) {
     self
 }
 
-method initialize ( --> ::?CLASS:D ) {
+method initialize ( |c-params --> ::?CLASS:D ) {
     my $*PLUG-INITIALZING = True;
     %!mod-info = ();
     for $!registry.plugin-types -> \type {
@@ -197,12 +222,15 @@ method initialize ( --> ::?CLASS:D ) {
     self!rebuild-dependencies;
     self!build-order;
 
-    for @!order -> $plugin {
-        next if self.disabled( $plugin );
-        %!objects{ $plugin } = $!registry.plugin-type( $plugin ).new( plugin-manager => self );
+    for @!order -> $fqn {
+        next if self.disabled( :$fqn );
+        %!objects{ $fqn } = $!registry.plugin-type( $fqn ).new(
+            |c-params,
+            plugin-manager => self,
+            name => $fqn, # It is already FQN as a result of !build-order
+            short-name => self.short-name( :$fqn ),
+        );
     }
-
-    .?initialize for self.plugin-objects;
 
     self
 }
@@ -248,8 +276,8 @@ multi method disabled ( Str:D $name ) {
 multi method disabled ( Str:D :$fqn! ) {
     %!disabled{ $fqn }
 }
-multi method disabled ( Plugin:U \type ) {
-    samewith( fqn => type.^name )
+multi method disabled ( Plugin:U \ptype ) {
+    samewith( fqn => ptype.^name )
 }
 
 method enabled (|c) {
@@ -263,16 +291,14 @@ method callback( Str:D $cb-name where ? *, |params ) {
     my %by-plugin; # Plugin private data
 
   CALLBACKS:
-    for @!order.map: { %!objects{ $_ } } -> $pobj {
+    for self!plugins-cando( 'on-callback', cb-params ) -> $pobj {
         my $*CURRENT-PLUGIN = $pobj;
         my $loop-action;
-        my $fqn = $pobj.^name;
+        my $fqn = $pobj.name;
         $msg.private = %by-plugin{ $fqn };
 
-        self!dbg: "&&& CAPTURE: ", cb-params.perl;
-        self!dbg: "&&& CAN    : ", $pobj.^can('on-callback')[0].is_dispatcher;
-        self!dbg: "&&& CANDO  : ", $pobj.^can('on-callback')[0].cando( \( $pobj, |cb-params ) );
-        if $pobj.^can('on-callback')[0].cando( \( $pobj, |cb-params ) ) {
+        # Isolate exceptions raised in the callback handler with do.
+        do {
             self!dbg: "&&& EXECUTE CALLBACK $cb-name";
             my $rc = $pobj.on-callback( |cb-params );
             $msg.set-rc( $_ ) with $rc;
@@ -305,6 +331,34 @@ method callback( Str:D $cb-name where ? *, |params ) {
 }
 
 method cb (|c) { self.callback( |c ) }
+
+method event ( Str:D $name where { .chars > 0 }, |params ) {
+    $!ev-dispatch-lock.protect: {
+        unless $!event-queue {
+            self!dbg: "+++ Creating event queue";
+            $!event-queue .= new;
+            $!event-queue.closed.then( { $!event-queue = Nil } );
+        }
+
+        unless $!event-dispatcher.defined {
+            self!dbg: "+++ Starting event dispatcher";
+            $!event-dispatcher = start {
+                self!dispatch-event;
+            }
+
+            $!event-dispatcher.then( {
+                self!dbg: "... Event dispatcher is done, cleaning up";
+                # Clean up after dispatcher finishes.
+                $!event-dispatcher = Nil;
+            } );
+        }
+    }
+
+    self!dbg: "Sending event to the queue";
+    my $complete = Promise.new;
+    $!event-queue.send: EventPacket.new( :$name, vow => $complete.vow, params => params );
+    $complete
+}
 
 method order { @!order.clone }
 
@@ -345,6 +399,12 @@ method class ( Any:U \type --> Any:U ) {
 method create ( Any:U \type, |params ) {
     my \wrapped-class = self.class( type );
     wrapped-class.new( |params )
+}
+
+method finish {
+    # First, let the event loop complete.
+    $!event-queue.close;
+    await $!event-dispatcher if $!event-dispatcher.defined;
 }
 
 method !find-modules ( --> Array(Seq) ) {
@@ -812,6 +872,99 @@ method !replay {
     for @records -> % (:&method, :$params) {
         self.&method( |$params );
     }
+}
+
+method !plugins-cando ( Str:D $method-name, Capture:D \params ) {
+    gather {
+        for self.plugin-objects -> $pobj {
+            my @mlist = $pobj.^can( $method-name ) || next;
+            take $pobj if @mlist[0].cando( \( $pobj, |params ) );
+        }
+    }
+}
+
+method !dispatch-event {
+    my $p-queue = Channel.new;
+    self!dbg: "Created worker event queue:", $p-queue.WHICH;
+
+    # Prepare event workers
+    my @workers = (^$!event-workers).map: {
+        start {
+            self!dbg: ">>> EVENT WORKER #", $*THREAD.id, " STARTED";
+            react {
+                whenever $p-queue -> @ ($pobj, $ev) {
+                    self!dbg: ">>> ", $*THREAD.id, " WORKING ON EVENT ", $ev.perl;
+                    $ev.vow.keep( # Signal back the completion.
+                        ( $pobj, $pobj.on-event( $ev.name, |$ev.params ) )
+                    );
+                    CATCH {
+                        default {
+                            $ev.vow.break( [$pobj, $_] );
+                        }
+                    }
+                }
+            }
+            self!dbg: ">>> EVENT WORKER #", $*THREAD.id, " FINISHING";
+        }
+    };
+
+    self!dbg: "Created ", @workers.elems, " workers";
+
+    my Bool $done = False;
+
+    # Enter the event loop
+    while !$done {
+        self!dbg: "... Enter the event loop";
+
+        my atomicint $got-events ⚛= 0;
+        my @control-promises;
+
+        # Timeout if no events to dispatch
+        @control-promises.push: Promise.in( $!ev-dispatcher-timeout ).then( {
+                self!dbg: "... Timeout, got events: ", $got-events;
+                $done = $got-events == 0; # No events received while in timeout period, finish the event loop
+                $!event-queue.close;
+            }
+        ) if $!ev-dispatcher-timeout > 0;
+
+        # Finish upon main queue closing – most likely, due to shutdown
+        # Actual event dispatching.
+        @control-promises.push: $!event-queue.closed.then( {
+            self!dbg: "!!! {$*THREAD.id} Finishing by closed queue";
+            $done = True
+        } );
+
+        @control-promises.push:
+            start {
+                # Fetch an EventPacket
+                self!dbg: "AWAITING FOR A PACKET";
+                my $ev = await $!event-queue;
+                self!dbg: "GOT PACKET: ", $ev;
+                $got-events⚛++;
+                self!dbg: "Event packet from the queue: ", $ev.perl;
+                # Make params for the event handler.
+                my $handler-params = \( $ev.name, |$ev.params );
+                my @w-complete;
+                for self!plugins-cando( 'on-event', $handler-params ) -> $pobj {
+                    my $p = Promise.new;
+                    @w-complete.push: $p;
+                    my $w-ev = $ev.clone( vow => $p.vow );
+                    self!dbg: "... Sending event for matching plugin: ", $pobj.^name, " into ", $p-queue.WHICH;
+                    $p-queue.send: ($pobj, $w-ev);
+                }
+                Promise.allof( |@w-complete ).then( { self!dbg: "@@@ W-COMPLETE of {$ev.name}: ", @w-complete.perl; $ev.vow.keep( @w-complete ) } );
+            };
+
+        my $rc = await Promise.anyof( @control-promises );
+
+        self!dbg: "<<< RC of await: ", $rc, ", done: ", $done;
+    }
+
+    self!dbg: "=== CLOSING WORKERS QUEUE";
+    $p-queue.close;
+
+    # Let all workers finish first.
+    await @workers;
 }
 
 method !dbg (*@msg) {

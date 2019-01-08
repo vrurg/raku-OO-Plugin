@@ -68,3 +68,5 @@ is $inst.foo, "P2::C1+P1::C1+" ~ pi, "the inheritance chain was correct";
 can-ok $inst, "c1-attr", "rw attribute from a plugin";
 
 done-testing;
+
+# vim: ft=perl6

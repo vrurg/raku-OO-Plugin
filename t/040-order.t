@@ -1,43 +1,9 @@
 use v6.d;
-use lib './t';
+use lib './t', './build-tools/lib';
 use Test;
+use OOPTest;
 use OO::Plugin;
 use OO::Plugin::Manager;
-
-sub gen-plugin( %params --> Array ) {
-    my $count = %params<count>;
-    state $last-num = 0;
-    my @list;
-    for ^$count {
-        my $*CURRENT-PLUGIN-CLASS;
-        my %*CURRENT-PLUGIN-META;
-        my $name = "P$last-num";
-        $last-num++;
-        @list.push: OO::Plugin::Metamodel::PluginHOW.new_type( name => $name );
-    }
-
-    # Build dependency metas for new plugins.
-    my %pdeps;
-    for %params<deps>.keys -> $mkey {
-        given $mkey {
-            when any <after before demand> {
-                my %user-deps = %params<deps>{$_};
-                for %user-deps.keys -> $idx {
-                    my \ptype = @list[$idx];
-                    %pdeps{ $idx }{$_} ∪= %user-deps{$idx}.map: { @list[$_].^name };
-                }
-            }
-        }
-    }
-
-    for ^@list.elems {
-        %pdeps{$_}<name> = @list[$_].^name ~ "-#" ~ $_;
-        my %*CURRENT-PLUGIN-META = %pdeps{$_} // {};
-        @list[$_].^compose;
-    }
-
-    @list
-}
 
 my @variants =
     (
@@ -282,7 +248,9 @@ for @variants -> %variant {
         my $test-count = %variant<verify><order>.elems;
         $test-count += .elems × 2 with %variant<verify><disabled>;
         plan $test-count;
-        my @plugins = gen-plugin( %variant );
+        my @plugins = gen-plugins( %variant );
+        # note @plugins.perl;
+        bail-out "expected %variant<count> plugins, generated " ~ @plugins.elems if  @plugins.elems ≠ %variant<count>;
         my $mgr = OO::Plugin::Manager.new( :!debug );
         for %variant<priority>.kv -> $prio,%pp {
             my @pnames = %pp<idx>.map: { @plugins[$_].^name };
@@ -291,18 +259,21 @@ for @variants -> %variant {
         $mgr.disable(@prev-plugins, "it's from another subtest");
         $mgr.initialize;
         my %n2i = (^@plugins.elems).map( { @plugins[$_].^name => $_ } );
+        # note "= N2I: ", %n2i;
         # note (^@plugins.elems).map( { $_ ~ ":" ~ @plugins[$_].^name } ).join(", ");
         my @idx-order = $mgr.order.map( { %n2i{$_} } );
         # diag "Final order: " ~ @idx-order.join(", ");
         bail-out "Duplicate entries in sort result, major algorithm failure"
             if Bag.new( @idx-order ).values.grep( * > 1 ).elems > 0;
         my %idx-map = ( ^@idx-order.elems ).map: { @idx-order[$_] => $_ };
-        # note %idx-map;
+        # note "= IDX-MAP: ", %idx-map;
 
         if %variant<verify> -> %verify {
             if %verify<order> -> %order {
                 for %order.keys.sort -> $base-pnum {
                     my $text = "$base-pnum follows " ~ %order{$base-pnum}.values.join(",");
+                    # note "TEXT : ", $text;
+                    # note "ORDER: ", %order;
                     ok so ( %idx-map{ $base-pnum } > all @( %order{ $base-pnum }.map: { %idx-map{ $_ } } ) ), $text;
                 }
             }
@@ -321,4 +292,5 @@ for @variants -> %variant {
 }
 
 done-testing;
+
 # vim: ft=perl6

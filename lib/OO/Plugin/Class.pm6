@@ -2,16 +2,16 @@ use v6.d;
 unit module OO::Plugin::Class;
 
 class PluginMessage is export {
-    #| Parameters the method has been called with
+    # Parameters the method has been called with
     has Capture:D $.params is rw is required;
-    #| Data to be passed across plugin's plugs only. I.e. if a plugin defines 'before' and 'after' plugs then this data
-    #| would only be available to them, not to the plugs from other plugins.
+    # Data to be passed across plugin's plugs only. I.e. if a plugin defines 'before' and 'after' plugs then this data
+    # would only be available to them, not to the plugs from other plugins.
     has $.private is rw;
-    #| Data shared among all plugs of the current method.
+    # Data shared among all plugs of the current method.
     has %.shared;
-    #| Plugin-suggested return value
+    # Plugin-suggested return value
     has $!rc;
-    #| Indicates that $!rc was set.
+    # Indicates that $!rc was set.
     has Bool:D $!rc-set = False;
 
     method set-rc ( $!rc is copy ) {
@@ -38,8 +38,11 @@ class MethodHandlerMsg is PluginMessage is export {
 
 class Plugin:auth<CPAN:VRURG>:ver<0.0.0>:api<0> is export {
     has $.plugin-manager is required where { is-plug-mgr $_ };
+    has Str:D $.name is required;
+    has Str:D $.short-name is required;
 
-    proto method on-event ( $, PluginMessage:D $msg, | ) {*}
+    proto method on-event ( Str:D $name, | ) {*}
+    # multi method on-event ( Str:D $n, | ) { note "unhandled event $n" }
 
     proto method on-callback ( Str:D $cb-name, PluginMessage:D $msg, | ) {*}
 }

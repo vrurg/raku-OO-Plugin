@@ -96,3 +96,5 @@ is $inst.foo, 42, "42 returned from handler";
 is $inst.foo( "OK" ), "The answer is 42", "returned value modified by 'after' handler";
 
 done-testing;
+
+# vim: ft=perl6
