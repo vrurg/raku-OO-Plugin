@@ -1,6 +1,6 @@
 use v6;
 
-module OO::Plugin:ver<0.0.0>:auth<cpan:VRURG> {
+module OO::Plugin:ver<0.0.0>:auth<github:vrurg> {
     use OO::Plugin::Exception;
 
     our proto plugin-meta (|) is export {*}

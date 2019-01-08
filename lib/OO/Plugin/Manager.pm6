@@ -1,8 +1,6 @@
 use v6.d;
 unit class OO::Plugin::Manager:auth<CPAN:VRURG>:ver<0.0.0>:api<0>;
 use File::Find;
-use JSON::Fast;
-use Data::Dump;
 use OO::Plugin::Metamodel::PluginHOW;
 use OO::Plugin::Registry;
 use OO::Plugin::Class;

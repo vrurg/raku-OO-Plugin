@@ -38,6 +38,7 @@ README.html: $(MAIN_MOD)
 	@perl6 --doc=HTML $^ >$@
 
 test:
+	@echo "===> Testing"
 	@$(PROVE)
 
 author-test:
