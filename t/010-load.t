@@ -21,7 +21,7 @@ plan 1;
 # note "----", ::("Foo::Plugin")::Test.keys;
 # note "++++", Foo::Plugin::Test.keys;
 
-my $mgr = OO::Plugin::Manager.new( base => 'Foo' );
+my $mgr = OO::Plugin::Manager.new( base => 'Foo', :!debug );
 $mgr.load-plugins;
 
 # diag Dump $mgr.meta( 'Foo::Plugin::Test' ), :!color, :skip-methods;

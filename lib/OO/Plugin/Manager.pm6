@@ -88,7 +88,7 @@ has Int:D $.event-workers where * > 0 = 3;
 # Number of seconds for the dispatcher to wait for another event after processing one.
 has Real:D $.ev-dispatcher-timeout = 1.0;
 
-submethod TWEAK {
+submethod TWEAK (|) {
     $!registry = Plugin::Registry.instance;
 }
 
@@ -203,6 +203,16 @@ method initialize ( |c-params --> ::?CLASS:D ) {
     %!mod-info = ();
     for $!registry.plugin-types -> \type {
         my $fqn = type.^name;
+
+        self!dbg: "*** TRYING PLUGIN: ", $fqn, " // ", type.^shortname, ", base: ", $.base;
+
+        # Skip plugins with full name not starting with $.base
+        my @ns = @!namespaces;
+        my $base = $!base;
+        next if $.base and $fqn !~~ /^ $base  '::' @ns '::' /;
+
+        self!dbg: "*** PASSED PLUGIN: ", $fqn;
+
         my $shortname = type.^shortname;
         # Keys from the registry module override keys from plugin module's %meta
         $!registry.plugin-meta( $_, type ) with type::<%meta>;
@@ -406,7 +416,7 @@ method finish {
 }
 
 method !find-modules ( --> Array(Seq) ) {
-    return unless ? $!base; # Don't load external plugins if base is not defined.
+    return unless ? $.base; # Don't load external plugins if base is not defined.
     gather {
         for $*REPO.repo-chain -> $r {
             given $r {
@@ -736,7 +746,9 @@ method !build-class ( Mu:U \type --> Mu:U ) {
                 $plugin-manager!dbg: "&&& AT STAGE $stage";
 
                 if %routines{ $stage } {
-                    for %routines{ $stage }.List -> $r {
+                    my @routine-list = %routines{ $stage }.List;
+                    @routine-list = @routine-list.reverse if $stage ~~ 'after';
+                    for @routine-list -> $r {
                         # This is where we actually call plugs.
                         my $*CURRENT-PLUGIN = $r<plugin-obj>;
 
@@ -859,6 +871,8 @@ method !rebuild-dependencies {
     }
 }
 
+# record-replay/replay pair allows to postpone a method execution for later by recording the parameters it was called
+# with.
 has @!replay-requests;
 method !record-replay ( &method, Capture $params ) {
     @!replay-requests.push: { :&method, :$params };
