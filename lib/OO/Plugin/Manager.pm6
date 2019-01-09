@@ -199,6 +199,8 @@ method load-plugins ( --> ::?CLASS:D ) {
 }
 
 method initialize ( |c-params --> ::?CLASS:D ) {
+    die "Can't re-initialize" if $!initialized;
+
     my $*PLUG-INITIALZING = True;
     %!mod-info = ();
     for $!registry.plugin-types -> \type {
@@ -240,6 +242,8 @@ method initialize ( |c-params --> ::?CLASS:D ) {
         );
     }
 
+    $!initialized = True;
+
     self
 }
 
@@ -248,8 +252,9 @@ proto method disable (|) {*}
 multi method disable ( |params( Str:D $plugin, Str:D $reason ) ) {
     # Due to the issue #2362 (https://github.com/rakudo/rakudo/issues/2362) we MUST preserve &?ROTINE outside of if
     # control block.
+    die "Cannot disable plugin: the manager is already initialized" if $!initialized;
     my &method = &?ROUTINE;
-    if $!initialized or try $*PLUG-INITIALZING {
+    if try $*PLUG-INITIALZING { # Only do the work while maanger is initializing
         my $fqn = self.normalize-name: $plugin;
         unless %!disabled{$fqn} {
             %!disabled{ $fqn } = $reason;

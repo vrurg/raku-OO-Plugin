@@ -1,6 +1,6 @@
 use v6.d;
 use OO::Plugin;
-unit package Foo::Plugin;
+unit module Foo::Plugin::Plug1;
 plugin TestPlug1 {
     # our %meta =
     #     after => 'SomePlugin',
