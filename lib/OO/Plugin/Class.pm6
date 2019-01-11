@@ -14,16 +14,16 @@ class PluginMessage is export {
     # Indicates that $!rc was set.
     has Bool:D $!rc-set = False;
 
-    method set-rc ( $!rc is copy ) {
+    method set-rc ( $!rc is copy --> Nil ) {
         $!rc-set = True;
     }
 
-    method reset-rc {
+    method reset-rc ( --> Nil ) {
         $!rc = Nil;
         $!rc-set = False;
     }
 
-    method has-rc { $!rc-set }
+    method has-rc ( --> Bool ) { $!rc-set }
     method rc { $!rc }
 }
 

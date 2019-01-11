@@ -6,7 +6,13 @@ role X::Plugin {
 }
 
 class CX::Plugin::Last does X::Control does X::Plugin {
-    has $.rc is required;
+    has $.rc;
+    has Bool $.rc-set = False;
+
+    multi submethod TWEAK ( :$!rc! ) {
+        $!rc-set = True;
+    }
+    multi submethod TWEAK () { }
 
     method message { "<last plug control exception>" }
 }
