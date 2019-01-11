@@ -1,4 +1,5 @@
 use v6;
+use Test::When <release>;
 BEGIN {
     use Test;
     my $proc = run "./build-tools/pre-install-mod.p6", "./t/p6-Foo-Plugin-Test";
