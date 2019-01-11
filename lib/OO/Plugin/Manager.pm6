@@ -189,7 +189,7 @@ method load-plugins ( --> ::?CLASS:D ) {
 
         CATCH {
             default {
-                self!dbg: "Module load failed:\n", ~$_, $_.backtrace.full, "----------------------" if $!debug;
+                self!dbg: "Module load failed:\n" ~ ~$_ ~ $_.backtrace.full ~ "----------------------";
                 @!load-errors.push: $mod => ~$_ ~ ( $!debug ?? $_.backtrace !! "");
             }
         }
@@ -292,6 +292,9 @@ multi method disabled ( Str:D :$fqn! ) {
 multi method disabled ( Plugin:U \ptype ) {
     samewith( fqn => ptype.^name )
 }
+multi method disabled () {
+    %!disabled.clone;
+}
 
 method enabled (|c) {
     ! self.disabled(|c)
@@ -314,7 +317,7 @@ method callback( Str:D $cb-name where ? *, |params ) {
         do {
             self!dbg: "&&& EXECUTE CALLBACK $cb-name";
             my $rc = $pobj.on-callback( |cb-params );
-            $msg.set-rc( $_ ) with $rc;
+            $msg.set-rc( $rc ) if $rc.defined and not $msg.has-rc;
 
             CATCH {
                 self!dbg: "!!! CAUGHT ", $_.perl;
@@ -386,6 +389,14 @@ method plugin-objects {
     @!order.map: { %!objects{ $_ } }
 }
 
+proto method plugin-object (|) {*}
+multi method plugin-object ( Str:D $name ) {
+    %!object{ self.normalize-name: $name }
+}
+multi method plugin-object( Str:D :$fqn ) {
+    %!object{ $fqn }
+}
+
 # Return all enabled plugins
 method all-enabled ( --> Seq:D ) {
     %!mod-info.keys.grep: { self.enabled( fqn => $_ ) }
@@ -420,8 +431,8 @@ method finish {
     await $!event-dispatcher if $!event-dispatcher.defined;
 }
 
-method !find-modules ( --> Array(Seq) ) {
-    return unless ? $.base; # Don't load external plugins if base is not defined.
+method !find-modules ( --> Array(Iterable) ) {
+    return () unless ? $.base; # Don't load external plugins if base is not defined.
     gather {
         for $*REPO.repo-chain -> $r {
             given $r {
@@ -712,15 +723,42 @@ method !build-class ( Mu:U \type --> Mu:U ) {
     self!build-class-chain( wtype, type );
 
     for %methods.keys -> $mname {
-        # self!dbg: "GENERATING METHOD ", $mname;
+        self!dbg: "-- GENERATING METHOD ", $mname;
         my %routines; # Ordered list of routines to be called for the methods. Keys are stages: before, around, after
-        for @!order -> $fqn {
-            with %methods{ $mname }{ $fqn } {
+        for @!order -> $plugin-fqn {
+            self!dbg: "--- PLUGIN $plugin-fqn";
+            with %methods{ $mname }{ $plugin-fqn } {
                 for .keys -> $stage {
+                    self!dbg: "---- STAGE $stage";
+
+                    my &routine = $_{ $stage };
+                    self!dbg: "---- SIGNATURE: ", &routine.signature.perl;
+                    my $is-dispatcher = &routine.is_dispatcher;
+                    my $params = &routine.signature.params;
+                    my $param-last = $params.end;
+                    # If proto doesn't have | in its signature then dummy named parameter %_ of type Mu is
+                    # implicitly added to the end.
+                    with $params[$param-last] {
+                        $param-last-- if .type ~~ Mu and .slurpy and .named and .name eq '%_';
+                    }
+
+                    self!dbg: "PARAM-LAST: ", $param-last, ", type: ", $params[$param-last].type,
+                                ", name:", $params[$param-last].name,
+                                ", optional:", $params[$param-last].optional,
+                                ", slurpy:", $params[$param-last].slurpy,
+                                ", named:", $params[$param-last].named,
+                                ", name:", $params[$param-last].name,
+                                "\n", $params[$param-last].perl;
+
+                    my Bool $with-params = $param-last > 1;
+
+                    self!dbg: "---- MUST USE PARAMS? ", $with-params;
+
                     %routines{ $stage }.push: %(
-                        routine => $_{ $stage },
-                        plugin-fqn => $fqn,
-                        plugin-obj => %!objects{ $fqn },
+                        :&routine,
+                        :$with-params,
+                        :$plugin-fqn,
+                        plugin-obj => %!objects{ $plugin-fqn },
                     );
                 }
             }
@@ -759,25 +797,16 @@ method !build-class ( Mu:U \type --> Mu:U ) {
 
                         $msg.private = %by-plugin{ $r<plugin-fqn> };
 
-                        my &routine := $r<routine>;
-                        my $params = &routine.signature.params;
-                        my $invocant-count = &routine ~~ Method ?? 1 !! 0; # Where the first non-invocant param starts
-                        my $param-last = $params.end;
-                        # If proto doesn't have | in its signature then dummy named parameter %_ of type Mu is
-                        # implicitly added to the end.
-                        $param-last-- if $params[$param-last].type ~~ Mu and $params[$param-last].named;
+                        my &routine = $r<routine>;
 
                         # Call multi-method
-                        $plugin-manager!dbg: "&&& EXECUTE HANDLER ", $r<plugin-obj>.^name, "::", &routine.name;
+                        $plugin-manager!dbg: "&&& EXECUTE HANDLER ", $r<plugin-obj>.name, "::", &routine.name;
 
-                        if ( not &routine.is_dispatcher )
-                            || ( ( $param-last == $invocant-count )
-                                && ( $params[$param-last].type ~~ Any )
-                                && ( not $params[$param-last].name ) ) {
-                            $r<plugin-obj>.&routine( $msg );
+                        if $r<with-params> {
+                            $r<plugin-obj>.&routine( $msg, |params );
                         }
                         else {
-                            $r<plugin-obj>.&routine( $msg, |params );
+                            $r<plugin-obj>.&routine( $msg );
                         }
 
                         %by-plugin{ $r<plugin-fqn> } = $msg.private; # Remember what's been set by the plugin (if was)
@@ -902,6 +931,7 @@ method !plugins-cando ( Str:D $method-name, Capture:D \params ) {
 
 method !dispatch-event {
     my $p-queue = Channel.new;
+    my Lock $pq-lock .= new; # Prevent accidental closing of $p-queue before it's stuffed with worker events.
     self!dbg: "Created worker event queue:", $p-queue.WHICH;
 
     # Prepare event workers
@@ -912,10 +942,12 @@ method !dispatch-event {
                 whenever $p-queue -> @ ($pobj, $ev) {
                     self!dbg: ">>> ", $*THREAD.id, " WORKING ON EVENT ", $ev.perl;
                     $ev.vow.keep( # Signal back the completion.
-                        ( $pobj, $pobj.on-event( $ev.name, |$ev.params ) )
+                        [ $pobj, $pobj.on-event( $ev.name, |$ev.params ) ]
                     );
                     CATCH {
                         default {
+                            # TODO Implement a common way of reporting these exceptions with minimal involvement of the
+                            # user code. Or the user can register a callback where we will be reporting all errors.
                             $ev.vow.break( [$pobj, $_] );
                         }
                     }
@@ -951,6 +983,7 @@ method !dispatch-event {
             $done = True
         } );
 
+
         @control-promises.push:
             start {
                 # Fetch an EventPacket
@@ -962,14 +995,19 @@ method !dispatch-event {
                 # Make params for the event handler.
                 my $handler-params = \( $ev.name, |$ev.params );
                 my @w-complete;
-                for self!plugins-cando( 'on-event', $handler-params ) -> $pobj {
-                    my $p = Promise.new;
-                    @w-complete.push: $p;
-                    my $w-ev = $ev.clone( vow => $p.vow );
-                    self!dbg: "... Sending event for matching plugin: ", $pobj.^name, " into ", $p-queue.WHICH;
-                    $p-queue.send: ($pobj, $w-ev);
+                $pq-lock.protect: {
+                    for self!plugins-cando( 'on-event', $handler-params ) -> $pobj {
+                        my $p = Promise.new;
+                        @w-complete.push: $p;
+                        my $w-ev = $ev.clone( vow => $p.vow );
+                        self!dbg: "... Sending event for matching plugin: ", $pobj.^name, " into ", $p-queue.WHICH;
+                        $p-queue.send: ($pobj, $w-ev);
+                    }
                 }
-                Promise.allof( |@w-complete ).then( { self!dbg: "@@@ W-COMPLETE of {$ev.name}: ", @w-complete.perl; $ev.vow.keep( @w-complete ) } );
+                Promise.allof( |@w-complete ).then( {
+                    self!dbg: "@@@ W-COMPLETE of {$ev.name}: ", @w-complete.perl;
+                    $ev.vow.keep( @w-complete )
+                } );
             };
 
         my $rc = await Promise.anyof( @control-promises );
@@ -978,7 +1016,7 @@ method !dispatch-event {
     }
 
     self!dbg: "=== CLOSING WORKERS QUEUE";
-    $p-queue.close;
+    $pq-lock.protect: { $p-queue.close };
 
     # Let all workers finish first.
     await @workers;
