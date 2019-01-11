@@ -2,7 +2,7 @@
 SHELL = /bin/sh
 
 MAIN_MOD=lib/OO/Plugin.pm6
-MOD_VER:=$(shell perl6 -Ilib -e 'use OO::Plugin; Plugin.^ver.say')
+MOD_VER:=$(shell perl6 -Ilib -e 'use OO::Plugin; OO::Plugin.^ver.say')
 MOD_NAME_PFX=OO-Plugin
 MOD_DISTRO=$(MOD_NAME_PFX)-$(MOD_VER)
 MOD_ARCH=$(MOD_DISTRO).tar.gz
