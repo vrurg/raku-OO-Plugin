@@ -1,4 +1,6 @@
 
+SHELL = /bin/sh
+
 MAIN_MOD=lib/OO/Plugin.pm6
 MOD_VER:=$(shell perl6 -Ilib -e 'use OO::Plugin; Plugin.^ver.say')
 MOD_NAME_PFX=OO-Plugin
@@ -19,17 +21,22 @@ CLEAN_FILES=$(MOD_NAME_PFX)-v*.tar.gz \
 
 CLEAN_DIRS=lib/.precomp t/.precomp t/lib/.precomp build-tools/lib/.precomp .test-repo
 
-.PHONY: all readme html test author-test release-test \
-		clean-repo build depends release meta6_mod meta \
-		archive upload clean install
+DOC_DIR=doc
+
+.SUFFXES: .md .pod6
+
+vpath %.pod6 $(DOC_DIR)/OO/Plugin
+
+.PHONY: all html test author-test release-test clean-repo build depends release meta6_mod meta \
+		archive upload clean install doc
+
+%.md : %.pod6
+	@echo "===> " $<
+	@perl6 -I lib --doc=Markdown $< >$*.md
 
 all: release
 
-readme: README.md
-
-README.md: $(MAIN_MOD)
-	@echo "===> Generating $@"
-	@perl6 -I lib --doc=Markdown $^ >$@
+doc: README.md Manual.md
 
 html: README.html
 
