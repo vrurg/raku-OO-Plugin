@@ -1,5 +1,79 @@
 use v6;
 
+=begin pod
+=head1 NAME
+
+OO::Plugin – framework for working with OO plugins.
+
+=head1 SYNOPSIS
+
+    use OO::Plugin;
+    use OO::Plugin::Manager;
+
+    class Foo is pluggable {
+        has $.attr;
+        method bar is pluggable {
+            return 42;
+        }
+    }
+
+    plugin Fubar {
+        method a-bar ( $msg ) is plug-around( Foo => 'bar' ) {
+            $msg.set-rc( pi ); # Will override &Foo::bar return value and prevent its execution.
+        }
+    }
+
+    my $manager = OO::Plugin::Manager.new.initialize;
+    my $instance = $manager.create( Foo, attr => 'some value' );
+    say $instance.bar;  # 3.141592653589793
+
+=head1 DESCRIPTION
+
+With this framework any application can have highly flexible and extensible plugin subsystem with which plugins would be
+capable of:
+
+=item method overriding
+=item class overriding (inheriting)
+=item callbacks
+=item asynchronous event handling
+
+The framework also supports:
+
+=item automatic loading of plugins with a predefined namespace
+=item managing plugin ordering and dependencies
+
+Not yet supported but planned for the future is plugin compatibility management.
+
+Read more in L<OO::Plugin::Manual>.
+
+=head1 EXPORTS
+
+=head2 Routines
+
+=begin item
+C<plugin-meta [key => value, ...]>
+
+Registers plugin meta. Can only be used within plugin body block.
+=end item
+
+=begin item
+C<plug-last [return-value]>
+
+Cancels current execution chain and optionally sets return value.
+=end item
+
+=begin item
+C<plug-redo>
+
+Restarts current execution chain.
+=end item
+
+=head2 Classes
+
+C<PluginMessage> and <MethodHandlerMsg> are re-exported from L<OO::Plugin::Class>.
+
+=end pod
+
 module OO::Plugin:ver<0.0.0>:auth<github:vrurg> {
     use OO::Plugin::Exception;
 
@@ -13,7 +87,13 @@ module OO::Plugin:ver<0.0.0>:auth<github:vrurg> {
         Plugin::Registry.instance.plugin-meta( %meta, CALLER::<::?CLASS> )
     }
 
-    sub plug-last ( $rc? ) is export {
+    proto plug-last (|) is export {*}
+    multi plug-last () {
+        CX::Plugin::Last.new(
+            plugin => $*CURRENT-PLUGIN
+        ).throw
+    }
+    multi plug-last ( Mu $rc ) {
         CX::Plugin::Last.new(
             plugin => $*CURRENT-PLUGIN,
             :$rc,
@@ -166,3 +246,13 @@ sub EXPORT {
         # '&plugin-meta' => &OO::Plugin::plugin-meta,
     );
 }
+
+=begin pod
+
+=head1 SEE Also
+
+L<OO::Pling::Manual>, L<OO::Plugin::Manager>, L<OO::Plugin::Class>
+
+=AUTHOR  Vadim Belman <vrurg@cpan.org>
+
+=end pod
