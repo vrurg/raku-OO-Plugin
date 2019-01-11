@@ -87,3 +87,7 @@ sub gen-plugins( %params --> Array ) is export {
 
     @list
 }
+
+    # INIT {
+    #     install-distro( './t/p6-Foo-Plugin-Test' ) or flunk "failed to install plugin distro";
+    # }

@@ -11,7 +11,7 @@ plugin TestPlug1 {
         version => v1.2.3,
         ;
 
-    method a-wrapper (|) is plug-around('Some::Class' => '*', 'Other::Class' => 'other-method') {
+    method a-wrapper ($,|) is plug-around('Some::Class' => '*', 'Other::Class' => 'other-method') {
         note "Just a wrapper";
     }
 }
