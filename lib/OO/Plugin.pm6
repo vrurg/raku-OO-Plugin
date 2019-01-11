@@ -74,7 +74,7 @@ C<PluginMessage> and <MethodHandlerMsg> are re-exported from L<OO::Plugin::Class
 
 =end pod
 
-module OO::Plugin:ver<0.0.1>:auth<github:vrurg> {
+module OO::Plugin:ver<0.0.900>:auth<github:vrurg> {
     use OO::Plugin::Exception;
 
     our proto plugin-meta (|) is export {*}
