@@ -34,15 +34,15 @@ vpath %.pod6 $(DOC_DIR)/OO/Plugin
 	@echo "===> " $<
 	@perl6 -I lib --doc=Markdown $< >$*.md
 
+%.html: %.pod6
+	@echo "===> Generating $@"
+	@perl6 --doc=HTML $^ >$@
+
 all: release
 
 doc: README.md Manual.md
 
-html: README.html
-
-README.html: $(MAIN_MOD)
-	@echo "===> Generating $@"
-	@perl6 --doc=HTML $^ >$@
+html: README.html Manual.html
 
 test:
 	@echo "===> Testing"
@@ -59,7 +59,7 @@ release-test:
 clean-repo:
 	@git diff-index --quiet HEAD || (echo "*ERROR* Repository is not clean, commit your changes first!"; exit 1)
 
-build: depends readme
+build: depends doc
 
 depends: meta
 	@echo "===> Installing dependencies"
