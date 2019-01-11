@@ -25,27 +25,27 @@ sub reg-plug ( $routine, $plug, $position ) {
     }
 }
 
-multi trait_mod:<is> ( Routine:D $routine, :$plug-around! where * ~~ Hash ) is export {
+multi trait_mod:<is> ( Method:D $routine where { ! $_.multi }, :$plug-around! where * ~~ Hash ) is export {
     reg-plug-as-hash( $routine, $plug-around, 'around' );
 }
 
-multi trait_mod:<is> ( Routine:D $routine, :$plug-before! where * ~~ Hash ) is export {
+multi trait_mod:<is> ( Method:D $routine where { ! $_.multi }, :$plug-before! where * ~~ Hash ) is export {
     reg-plug-as-hash( $routine, $plug-before, 'before' );
 }
 
-multi trait_mod:<is> ( Routine:D $routine, :$plug-after! where * ~~ Hash ) is export {
+multi trait_mod:<is> ( Method:D $routine where { ! $_.multi }, :$plug-after! where * ~~ Hash ) is export {
     reg-plug-as-hash( $routine, $plug-after, 'after' );
 }
 
-multi trait_mod:<is> ( Routine:D $routine, :$plug-around! is copy where * ~~ Positional | Pair ) is export {
+multi trait_mod:<is> ( Method:D $routine where { ! $_.multi }, :$plug-around! is copy where * ~~ Positional | Pair:D | Str:D ) is export {
     reg-plug( $routine, $plug-around, 'around' );
 }
 
-multi trait_mod:<is> ( Routine:D $routine, :$plug-before! is copy where * ~~ Positional | Pair ) is export {
+multi trait_mod:<is> ( Method:D $routine where { ! $_.multi }, :$plug-before! is copy where * ~~ Positional | Pair:D | Str:D ) is export {
     reg-plug( $routine, $plug-before, 'before' );
 }
 
-multi trait_mod:<is> ( Routine:D $routine, :$plug-after! is copy where * ~~ Positional | Pair ) is export {
+multi trait_mod:<is> ( Method:D $routine where { ! $_.multi }, :$plug-after! is copy where * ~~ Positional | Pair:D | Str:D ) is export {
     reg-plug( $routine, $plug-after, 'after' );
 }
 
