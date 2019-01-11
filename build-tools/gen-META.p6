@@ -30,7 +30,7 @@ my $m = META6.new(
         'OO::Plugin::Metamodel::PlugRoleHOW'    => 'lib/OO/Plugin/Metamodel/PlugRoleHOW.pm6',
     },
     license        => 'Artistic-2.0',
-    production     => False,
+    production     => True,
 );
 
 print $m.to-json;
