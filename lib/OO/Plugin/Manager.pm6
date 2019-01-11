@@ -391,10 +391,10 @@ method plugin-objects {
 
 proto method plugin-object (|) {*}
 multi method plugin-object ( Str:D $name ) {
-    %!object{ self.normalize-name: $name }
+    %!objects{ self.normalize-name: $name }
 }
 multi method plugin-object( Str:D :$fqn ) {
-    %!object{ $fqn }
+    %!objects{ $fqn }
 }
 
 # Return all enabled plugins
