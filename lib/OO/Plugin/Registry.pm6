@@ -89,9 +89,27 @@ class Plugin::Registry is export {
     multi method register-plug ( Method:D $routine,
                                 Str:D $class,
                                 Str:D $method = '*',
-                                PlugPosition :$position = 'around' ) {
-        %!registry<plugs><methods>{ $class }{ $method }{ $routine.package.^name #`(plugin FQN) }{ $position } =
-            $routine;
+                                PlugPosition :$position = 'around',
+                                *%params ) {
+        # We could constain routine signature in the parameter but better provide explanatory errors.
+        my $signature = $routine.signature;
+        die "Invalid signature of the method handler" unless $signature ~~ :(Any: $, *%, *@ );
+        my $fparam = $signature.params[1];
+        die "Unsupported type constraint '", $fparam.type.WHO, "' for the first parameter"
+            unless $fparam.type === Any | MethodHandlerMsg;
+        die 'First parameter sigil must be $, not ' ~ $fparam.sigil
+            unless $fparam.sigil eq '$';
+
+        my $fqn = $routine.package.^name;
+        my \type = self.type( $class );
+
+        my @methods = $method eq '*' ?? type.^methods.map( *.name ) !! [ $method ];
+        for @methods -> $class-method {
+            die "There is already a handler for $class method $class-method in plugin $fqn"
+                if %!registry<plugs><methods>{ $class }{ $class-method }{ $fqn }{ $position }:exists;
+
+            %!registry<plugs><methods>{ $class }{ $class-method }{ $fqn }{ $position } = $routine;
+        }
     }
     multi method register-plug ( Method:D $routine,
                                 Mu:U \type,
@@ -130,13 +148,13 @@ class Plugin::Registry is export {
     }
 
     proto method is-pluggable (|) {*}
-    multi method is-pluggable ( Mu:U \type ) {
+    multi method is-pluggable ( Mu:U \type --> Bool:D ) {
         OO::Plugin::Registry::_classes::{ type.^name }:exists
     }
-    multi method is-pluggable ( Str:D $class ) {
+    multi method is-pluggable ( Str:D $class --> Bool:D ) {
         OO::Plugin::Registry::_classes::{ $class }:exists
     }
-    multi method is-pluggable ( Str:D $class, Str:D $method ) {
+    multi method is-pluggable ( Str:D $class, Str:D $method --> Bool:D ) {
         %!registry<pluggables><methods>{ $class }{ $method }:exists
     }
 
