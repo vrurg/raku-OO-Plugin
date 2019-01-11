@@ -243,6 +243,7 @@ sub EXPORT {
         Plugin => Plugin,
         PluginMessage => PluginMessage,
         MethodHandlerMsg => MethodHandlerMsg,
+        <OO::Plugin> => OO::Plugin,
         # '&plugin-meta' => &OO::Plugin::plugin-meta,
     );
 }
