@@ -6,6 +6,18 @@ use OO::Plugin::Registry;
 use OO::Plugin::Class;
 use OO::Plugin::Exception;
 
+=begin pod
+
+=head1 NAME
+
+OO::Plugin::Manager
+
+=head1 SYNOPSIS
+
+...
+
+=end pod
+
 enum PlugPriority is export <plugLast plugNormal plugFirst>;
 
 my class EventPacket {
