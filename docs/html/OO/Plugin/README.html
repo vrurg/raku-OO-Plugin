@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <title></title>
+        <meta charset="UTF-8" />
+        <style>
+        kbd { font-family: "Droid Sans Mono", "Luxi Mono", "Inconsolata", monospace }
+        samp { font-family: "Terminus", "Courier", "Lucida Console", monospace }
+        u { text-decoration: none }
+        .nested {
+            margin-left: 3em;
+        }
+        aside, u { opacity: 0.7 }
+        a[id^="fn-"]:target { background: #ff0 }
+        </style>
+        <link rel="stylesheet" href="//design.perl6.org/perl.css">
+        
+        
+    </head>
+    <body class="pod">
+    <div id="___top"></div>
+    
+    
+    
+    <nav class="indexgroup">
+<table id="TOC">
+<caption><h2 id="TOC_Title">Table of Contents</h2></caption>
+<tr class="toc-level-1"><td class="toc-number">1</td><td class="toc-text"><a href="#NAME">NAME</a></td></tr>
+  <tr class="toc-level-1"><td class="toc-number">2</td><td class="toc-text"><a href="#SYNOPSIS">SYNOPSIS</a></td></tr>
+  <tr class="toc-level-1"><td class="toc-number">3</td><td class="toc-text"><a href="#DESCRIPTION">DESCRIPTION</a></td></tr>
+             <tr class="toc-level-1"><td class="toc-number">4</td><td class="toc-text"><a href="#SEE_Also">SEE Also</a></td></tr>
+      
+</table>
+</nav>
+
+    <div class="pod-body">
+    <h1 id="NAME"><a class="u" href="#___top" title="go to top of document">NAME</a></h1>
+<p>OO::Plugin – framework for working with OO plugins.</p>
+<h1 id="SYNOPSIS"><a class="u" href="#___top" title="go to top of document">SYNOPSIS</a></h1>
+<pre class="pod-block-code">use OO::Plugin;
+use OO::Plugin::Manager;
+
+class Foo is pluggable {
+    has $.attr;
+    method bar is pluggable {
+        return 42;
+    }
+}
+
+plugin Fubar {
+    method a-bar ( $msg ) is plug-around( Foo =&gt; &#39;bar&#39; ) {
+        $msg.set-rc( pi ); # Will override &amp;Foo::bar return value and prevent its execution.
+    }
+}
+
+my $manager = OO::Plugin::Manager.new.initialize;
+my $instance = $manager.create( Foo, attr =&gt; &#39;some value&#39; );
+say $instance.bar;  # 3.141592653589793</pre>
+<h1 id="DESCRIPTION"><a class="u" href="#___top" title="go to top of document">DESCRIPTION</a></h1>
+<p>With this framework any application can have highly flexible and extensible plugin subsystem with which plugins would be capable of:</p>
+<ul><li><p>method overriding</p>
+</li>
+<li><p>class overriding (inheriting)</p>
+</li>
+<li><p>callbacks</p>
+</li>
+<li><p>asynchronous event handling</p>
+</li>
+</ul>
+<p>The framework also supports:</p>
+<ul><li><p>automatic loading of plugins with a predefined namespace</p>
+</li>
+<li><p>managing plugin ordering and dependencies</p>
+</li>
+</ul>
+<p>Not yet supported but planned for the future is plugin compatibility management.</p>
+<p>Read more in <a href="https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.1/Manual.md">OO::Plugin::Manual</a>.</p>
+<h1 id="SEE_Also"><a class="u" href="#___top" title="go to top of document">SEE Also</a></h1>
+<p><a href="OO::Plugin">OO::Plugin</a>, <a href="OO::Plugin::Manager">OO::Plugin::Manager</a>, <a href="OO::Plugin::Class">OO::Plugin::Class</a></p>
+<section><h1>AUTHOR</h1>
+<p>Vadim Belman &lt;vrurg@cpan.org&gt;</p>
+</section>
+
+    </div>
+    
+    
+    </body>
+</html>
+

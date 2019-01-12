@@ -47,12 +47,35 @@ The framework also supports:
 
 Not yet supported but planned for the future is plugin compatibility management.
 
-Read more in [OO::Plugin::Manual](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.1/Manual.md).
+Read more in [OO::Plugin::Manual](OO::Plugin::Manual).
+
+EXPORTS
+=======
+
+Routines
+--------
+
+  * `plugin-meta [key =` value, ...]>
+
+    Registers plugin meta. Can only be used within plugin body block.
+
+  * `plug-last [return-value]`
+
+    Cancels current execution chain and optionally sets return value.
+
+  * `plug-redo`
+
+    Restarts current execution chain.
+
+Classes
+-------
+
+`PluginMessage` and <MethodHandlerMsg> are re-exported from [OO::Plugin::Class](OO::Plugin::Class).
 
 SEE Also
 ========
 
-[OO::Plugin](OO::Plugin), [OO::Plugin::Manager](OO::Plugin::Manager), [OO::Plugin::Class](OO::Plugin::Class)
+[OO::Pling::Manual](OO::Pling::Manual), [OO::Plugin::Manager](OO::Plugin::Manager), [OO::Plugin::Class](OO::Plugin::Class)
 
 AUTHOR
 ======
