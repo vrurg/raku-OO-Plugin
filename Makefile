@@ -14,35 +14,68 @@ PROVE_FLAGS=-l -I=./build-tools/lib
 TEST_DIRS=t
 PROVE=$(PROVE_CMD) $(PROVE_FLAGS) $(TEST_DIRS)
 
-DIST_FILES := $(git ls-files)
+DIST_FILES:=$(shell git ls-files)
 
 CLEAN_FILES=$(MOD_NAME_PFX)-v*.tar.gz \
 			META6.json.out
 
-CLEAN_DIRS=lib/.precomp t/.precomp t/lib/.precomp build-tools/lib/.precomp .test-repo
+PRECOMP_DIRS=$(shell find . -type d -name '.precomp')
+CLEAN_DIRS=$(PRECOMP_DIRS) .test-repo
 
+# Doc variables
 DOC_DIR=doc
+DOCS_DIR=docs
+MD_DIR=$(DOCS_DIR)/md
+HTML_DIR=$(DOCS_DIR)/html
+DOCS_SUBDIRS=$(shell find lib -type d -name '.*' -prune -o -type d -printf '%P\n')
+MD_SUBDIRS:=$(addprefix $(MD_DIR)/,$(DOCS_SUBDIRS))
+HTML_SUBDIRS:=$(addprefix $(HTML_DIR)/,$(DOCS_SUBDIRS))
+PM_SRC=$(shell find lib -name '*.pm6' | xargs grep -l '^=begin')
+POD_SRC=$(shell find doc -name '*.pod6')
+DOC_SRC=$(POD_SRC) $(PM_SRC)
+DOC_DEST=$(shell find lib doc \( -name '*.pm6' -o -name '*.pod6' \) | xargs grep -l '^=begin' | sed 's,^[^/]*/,,')
 
 .SUFFXES: .md .pod6
 
-vpath %.pod6 $(DOC_DIR)/OO/Plugin
+vpath %.pm6 $(dir $(PM_SRC))
+vpath %.pod6 $(dir $(POD_SRC))
+#vpath %.md $(MD_SUBDIRS)
+#vpath %.html $(HTML_SUBDIRS)
 
 .PHONY: all html test author-test release-test clean-repo build depends release meta6_mod meta \
-		archive upload clean install doc
+		archive upload clean install doc md html docs_dirs
 
-%.md : %.pod6
-	@echo "===> " $<
-	@perl6 -I lib --doc=Markdown $< >$*.md
+%.md $(addsuffix /%.md,$(MD_SUBDIRS)):: %.pm6
+	@echo "===> Generating" $@ "of" $<
+	@perl6 -I lib --doc=Markdown $< >$@
 
-%.html: %.pod6
-	@echo "===> Generating $@"
-	@perl6 --doc=HTML $^ >$@
+%.md $(addsuffix /%.md,$(MD_SUBDIRS)):: %.pod6
+	@echo "===> Generating" $@ "of" $<
+	@perl6 -I lib --doc=Markdown $< >$@
+
+%.html $(addsuffix /%.html,$(HTML_SUBDIRS)):: %.pm6
+	@echo "===> Generating" $@ "of" $<
+	@perl6 -I lib --doc=HTML $< >$@
+
+%.html $(addsuffix /%.html,$(HTML_SUBDIRS)):: %.pod6
+	@echo "===> Generating" $@ "of" $<
+	@perl6 -I lib --doc=HTML $< >$@
 
 all: release
 
-doc: README.md Manual.md
+doc: md html
 
-html: README.html Manual.html
+docs_dirs: $(MD_SUBDIRS) $(HTML_SUBDIRS)
+	@echo
+	@echo $(addsuffix /%.md,$(MD_SUBDIRS))
+
+$(MD_SUBDIRS) $(HTML_SUBDIRS):
+	@echo "===> mkdir" $@
+	@mkdir -p $@
+
+md: ./README.md $(addprefix $(MD_DIR)/,$(patsubst %.pod6,%.md,$(patsubst %.pm6,%.md,$(DOC_DEST))))
+
+html: $(addprefix $(HTML_DIR)/,$(patsubst %.pod6,%.html,$(patsubst %.pm6,%.html,$(DOC_DEST))))
 
 test:
 	@echo "===> Testing"
@@ -96,6 +129,7 @@ upload: release
 	@echo "===> Uploaded."
 
 clean:
+	@echo "===> Cleaning " $(CLEAN_FILES) $(CLEAN_DIRS)
 	@rm -f $(CLEAN_FILES)
 	@rm -rf $(CLEAN_DIRS)
 
