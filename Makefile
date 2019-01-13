@@ -20,7 +20,8 @@ CLEAN_FILES=$(MOD_NAME_PFX)-v*.tar.gz \
 			META6.json.out
 
 PRECOMP_DIRS=$(shell find . -type d -name '.precomp')
-CLEAN_DIRS=$(PRECOMP_DIRS) .test-repo
+BK_FILES=$(shell find . -name '*.bk')
+CLEAN_DIRS=$(PRECOMP_DIRS) $(BK_FILES) .test-repo
 
 # Doc variables
 DOC_DIR=doc
@@ -43,7 +44,7 @@ vpath %.pod6 $(dir $(POD_SRC))
 #vpath %.html $(HTML_SUBDIRS)
 
 .PHONY: all html test author-test release-test is-repo-clean build depends release meta6_mod meta \
-		archive upload clean install doc md html docs_dirs
+		archive upload clean install doc md html docs_dirs doc_ver_patch
 
 %.md $(addsuffix /%.md,$(MD_SUBDIRS)):: %.pm6
 	@echo "===> Generating" $@ "of" $<
@@ -63,11 +64,14 @@ vpath %.pod6 $(dir $(POD_SRC))
 
 all: release
 
-doc: md html
+doc: docs_dirs doc_ver_patch md html
 
 docs_dirs: $(MD_SUBDIRS) $(HTML_SUBDIRS)
-	@echo
-	@echo $(addsuffix /%.md,$(MD_SUBDIRS))
+	@echo "===> Re-creating docs directory structure"
+	@mkdir -p $^
+
+doc_ver_patch:
+	@for src in $(DOC_SRC); do ./build-tools/patch-doc.p6 -r $$src; done
 
 $(MD_SUBDIRS) $(HTML_SUBDIRS):
 	@echo "===> mkdir" $@
