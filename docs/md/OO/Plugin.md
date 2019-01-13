@@ -70,15 +70,14 @@ Routines
 Classes
 -------
 
-`PluginMessage` and <MethodHandlerMsg> are re-exported from [OO::Plugin::Class](OO::Plugin::Class).
+`PluginMessage` and <MethodHandlerMsg> are re-exported from [OO::Plugin::Class](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.2/docs/md/OO/Plugin/Class.md).
 
 SEE Also
 ========
 
-[OO::Pling::Manual](OO::Pling::Manual), [OO::Plugin::Manager](OO::Plugin::Manager), [OO::Plugin::Class](OO::Plugin::Class)
+[OO::Plugin::Manual](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.2/docs/md/OO/Plugin/Manual.md), [OO::Plugin::Manager](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.2/docs/md/OO/Plugin/Manager.md), [OO::Plugin::Class](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.2/docs/md/OO/Plugin/Class.md)
 
 AUTHOR
 ======
 
 Vadim Belman <vrurg@cpan.org>
-

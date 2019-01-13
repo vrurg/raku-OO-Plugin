@@ -1,3 +1,26 @@
+PREFACE
+=======
+
+This document is provinding the reader with in-depth explanation of how `OO::Plugin` framework works. Technical details are provided in respective modules.
+
+INTRODUCTION
+============
+
+This framework is intended to provide a mechanizm of extending an application functionality through use of third-party provided plugins. The following functionality is provided for a plugin:
+
+  * Method call handling for the purposes ranging from simply monitoring a method call to completely replacing the original method functionality with plug-provided one.
+
+  * Class overriding using inheritance. I.e. an arbitrary core class can be inherited by a plugin-provided class and used by the core code instead of the original.
+
+  * Flexible callbacks.
+
+  * Asynchronous events.
+
+Also supported are automatic plugin module loading, and managing of plugin dependencies and priorities.
+
+DESCRIPTION
+===========
+
 Basics
 ------
 
@@ -453,4 +476,9 @@ Another meta key taken from plugin declaration is `version`:
     }
 
 unless there is manually defined `version` key declared by the programmer.
+
+SEE ALSO
+========
+
+[OO::Plugin](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.2/docs/md/OO/Plugin.md), [OO::Plugin::Manager](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.2/docs/md/OO/Plugin/Manager.md), [OO::Plugin::Class](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.2/docs/md/OO/Plugin/Class.md)
 

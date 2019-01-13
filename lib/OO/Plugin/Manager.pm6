@@ -960,6 +960,7 @@ method !dispatch-event {
                         default {
                             # TODO Implement a common way of reporting these exceptions with minimal involvement of the
                             # user code. Or the user can register a callback where we will be reporting all errors.
+                            # DAMNIT! Supplies, of course!
                             $ev.vow.break( [$pobj, $_] );
                         }
                     }
