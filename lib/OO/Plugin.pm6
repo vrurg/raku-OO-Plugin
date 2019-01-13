@@ -70,7 +70,8 @@ Restarts current execution chain.
 
 =head2 Classes
 
-C<PluginMessage> and <MethodHandlerMsg> are re-exported from L<OO::Plugin::Class>.
+C<PluginMessage> and <MethodHandlerMsg> are re-exported from
+L<OO::Plugin::Class|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.2/docs/md/OO/Plugin/Class.md>.
 
 =end pod
 

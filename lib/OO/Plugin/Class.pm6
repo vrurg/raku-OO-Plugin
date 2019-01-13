@@ -1,29 +1,54 @@
 use v6.d;
 unit module OO::Plugin::Class;
 
+=begin pod
+
+=head1 NAME
+
+OO::Plugin::Class - collection for service classes.
+
+=head1 EXPORTS
+
+=head2 Classes
+=end pod
+
+=begin pod
+
+=head3 class PluginMessage
+
+This class is used to provide a plugin with information about the current call. In its pure form the plugin manager is
+using objects of this class to communicate with callbacks.
+
+=end pod
 class PluginMessage is export {
-    # Parameters the method has been called with
+    #| Parameters the method has been called with
     has Capture:D $.params is rw is required;
-    # Data to be passed across plugin's plugs only. I.e. if a plugin defines 'before' and 'after' plugs then this data
-    # would only be available to them, not to the plugs from other plugins.
+    #| Data only available to a single plugin. This data would exists strictly within one execution chain and won't be
+    #| exposed to the code from other plugins.
     has $.private is rw;
-    # Data shared among all plugs of the current method.
+    #| Data shared among all the plugins. This attribute is similar to .private except this data is shared; i.e. what is
+    #| set by one plugin can be read or changed by others.
     has %.shared;
     # Plugin-suggested return value
     has $!rc;
     # Indicates that $!rc was set.
     has Bool:D $!rc-set = False;
 
+    #| This method sets the suggested return value for the current execution chain.
     method set-rc ( $!rc is copy --> Nil ) {
         $!rc-set = True;
     }
 
+    #| Reset the suggested return value.
     method reset-rc ( --> Nil ) {
         $!rc = Nil;
         $!rc-set = False;
     }
 
+    #| Returns _True_ if the suggested return value has been set.
     method has-rc ( --> Bool ) { $!rc-set }
+
+    #| Suggested return value
     method rc { $!rc }
 }
 

@@ -25,28 +25,47 @@
     <nav class="indexgroup">
 <table id="TOC">
 <caption><h2 id="TOC_Title">Table of Contents</h2></caption>
-<tr class="toc-level-2"><td class="toc-number">0.1</td><td class="toc-text"><a href="#Basics">Basics</a></td></tr>
-                             <tr class="toc-level-2"><td class="toc-number">0.2</td><td class="toc-text"><a href="#Pre-loading_Plugins_And_Naming.">Pre-loading Plugins And Naming.</a></td></tr>
-                    <tr class="toc-level-2"><td class="toc-number">0.3</td><td class="toc-text"><a href="#Ordering_And_Priorities">Ordering And Priorities</a></td></tr>
-                                                                 <tr class="toc-level-3"><td class="toc-number">0.3.1</td><td class="toc-text"><a href="#Sorting">Sorting</a></td></tr>
-                                                <tr class="toc-level-3"><td class="toc-number">0.3.2</td><td class="toc-text"><a href="#How_Ordering_Is_Used?">How Ordering Is Used?</a></td></tr>
-  <tr class="toc-level-2"><td class="toc-number">0.4</td><td class="toc-text"><a href="#Writing_A_Plugin">Writing A Plugin</a></td></tr>
-                      <tr class="toc-level-3"><td class="toc-number">0.4.1</td><td class="toc-text"><a href="#Method_Handling">Method Handling</a></td></tr>
-                                         <tr class="toc-level-4"><td class="toc-number">0.4.1.1</td><td class="toc-text"><a href="#Method_Return_Value">Method Return Value</a></td></tr>
-                        <tr class="toc-level-4"><td class="toc-number">0.4.1.2</td><td class="toc-text"><a href="#Chain_Control">Chain Control</a></td></tr>
-                         <tr class="toc-level-4"><td class="toc-number">0.4.1.3</td><td class="toc-text"><a href="#Parametrized_Handlers">Parametrized Handlers</a></td></tr>
-                                 <tr class="toc-level-4"><td class="toc-number">0.4.1.4</td><td class="toc-text"><a href="#Performance_Matters">Performance Matters</a></td></tr>
-    <tr class="toc-level-3"><td class="toc-number">0.4.2</td><td class="toc-text"><a href="#Class_Overriding">Class Overriding</a></td></tr>
-                                                  <tr class="toc-level-3"><td class="toc-number">0.4.3</td><td class="toc-text"><a href="#Callbacks">Callbacks</a></td></tr>
-                                       <tr class="toc-level-3"><td class="toc-number">0.4.4</td><td class="toc-text"><a href="#Events">Events</a></td></tr>
-                   <tr class="toc-level-4"><td class="toc-number">0.4.4.1</td><td class="toc-text"><a href="#Nuances">Nuances</a></td></tr>
-                <tr class="toc-level-2"><td class="toc-number">0.5</td><td class="toc-text"><a href="#Plugin_META">Plugin META</a></td></tr>
-                                                  
+<tr class="toc-level-1"><td class="toc-number">1</td><td class="toc-text"><a href="#PREFACE">PREFACE</a></td></tr>
+    <tr class="toc-level-1"><td class="toc-number">2</td><td class="toc-text"><a href="#INTRODUCTION">INTRODUCTION</a></td></tr>
+       <tr class="toc-level-1"><td class="toc-number">3</td><td class="toc-text"><a href="#DESCRIPTION">DESCRIPTION</a></td></tr>
+ <tr class="toc-level-2"><td class="toc-number">3.1</td><td class="toc-text"><a href="#Basics">Basics</a></td></tr>
+                             <tr class="toc-level-2"><td class="toc-number">3.2</td><td class="toc-text"><a href="#Pre-loading_Plugins_And_Naming.">Pre-loading Plugins And Naming.</a></td></tr>
+                    <tr class="toc-level-2"><td class="toc-number">3.3</td><td class="toc-text"><a href="#Ordering_And_Priorities">Ordering And Priorities</a></td></tr>
+                                                                 <tr class="toc-level-3"><td class="toc-number">3.3.1</td><td class="toc-text"><a href="#Sorting">Sorting</a></td></tr>
+                                                <tr class="toc-level-3"><td class="toc-number">3.3.2</td><td class="toc-text"><a href="#How_Ordering_Is_Used?">How Ordering Is Used?</a></td></tr>
+  <tr class="toc-level-2"><td class="toc-number">3.4</td><td class="toc-text"><a href="#Writing_A_Plugin">Writing A Plugin</a></td></tr>
+                      <tr class="toc-level-3"><td class="toc-number">3.4.1</td><td class="toc-text"><a href="#Method_Handling">Method Handling</a></td></tr>
+                                         <tr class="toc-level-4"><td class="toc-number">3.4.1.1</td><td class="toc-text"><a href="#Method_Return_Value">Method Return Value</a></td></tr>
+                        <tr class="toc-level-4"><td class="toc-number">3.4.1.2</td><td class="toc-text"><a href="#Chain_Control">Chain Control</a></td></tr>
+                         <tr class="toc-level-4"><td class="toc-number">3.4.1.3</td><td class="toc-text"><a href="#Parametrized_Handlers">Parametrized Handlers</a></td></tr>
+                                 <tr class="toc-level-4"><td class="toc-number">3.4.1.4</td><td class="toc-text"><a href="#Performance_Matters">Performance Matters</a></td></tr>
+    <tr class="toc-level-3"><td class="toc-number">3.4.2</td><td class="toc-text"><a href="#Class_Overriding">Class Overriding</a></td></tr>
+                                                  <tr class="toc-level-3"><td class="toc-number">3.4.3</td><td class="toc-text"><a href="#Callbacks">Callbacks</a></td></tr>
+                                       <tr class="toc-level-3"><td class="toc-number">3.4.4</td><td class="toc-text"><a href="#Events">Events</a></td></tr>
+                   <tr class="toc-level-4"><td class="toc-number">3.4.4.1</td><td class="toc-text"><a href="#Nuances">Nuances</a></td></tr>
+                <tr class="toc-level-2"><td class="toc-number">3.5</td><td class="toc-text"><a href="#Plugin_META">Plugin META</a></td></tr>
+                                                   <tr class="toc-level-1"><td class="toc-number">4</td><td class="toc-text"><a href="#SEE_ALSO">SEE ALSO</a></td></tr>
+     
 </table>
 </nav>
 
     <div class="pod-body">
-    <h2 id="Basics"><a class="u" href="#___top" title="go to top of document">Basics</a></h2>
+    <h1 id="PREFACE"><a class="u" href="#___top" title="go to top of document">PREFACE</a></h1>
+<p>This document is provinding the reader with in-depth explanation of how <code>OO::Plugin</code> framework works. Technical details are provided in respective modules.</p>
+<h1 id="INTRODUCTION"><a class="u" href="#___top" title="go to top of document">INTRODUCTION</a></h1>
+<p>This framework is intended to provide a mechanizm of extending an application functionality through use of third-party provided plugins. The following functionality is provided for a plugin:</p>
+<ul><li><p>Method call handling for the purposes ranging from simply monitoring a method call to completely replacing the original method functionality with plug-provided one.</p>
+</li>
+<li><p>Class overriding using inheritance. I.e. an arbitrary core class can be inherited by a plugin-provided class and used by the core code instead of the original.</p>
+</li>
+<li><p>Flexible callbacks.</p>
+</li>
+<li><p>Asynchronous events.</p>
+</li>
+</ul>
+<p>Also supported are automatic plugin module loading, and managing of plugin dependencies and priorities.</p>
+<h1 id="DESCRIPTION"><a class="u" href="#___top" title="go to top of document">DESCRIPTION</a></h1>
+<h2 id="Basics"><a class="u" href="#___top" title="go to top of document">Basics</a></h2>
 <p>All work is done through a plugin manager. It is generally recommended to have a single instance of plugin manager per application. The application, in turn, is supposed to delegate it&#39;s object creation functionality to the manager. I.e., where usually we create an instance with this line of code:</p>
 <pre class="pod-block-code">my $foo = Foo.new( attr =&gt; &#39;a value&#39; );</pre>
 <p>it is now recommended to have this:</p>
@@ -370,6 +389,8 @@ demand =&gt; &lt;Plugin5&gt;, # from %meta</pre>
     ...
 }</pre>
 <p>unless there is manually defined <code>version</code> key declared by the programmer.</p>
+<h1 id="SEE_ALSO"><a class="u" href="#___top" title="go to top of document">SEE ALSO</a></h1>
+<p><a href="https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.2/docs/md/OO/Plugin.md">OO::Plugin</a>, <a href="https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.2/docs/md/OO/Plugin/Manager.md">OO::Plugin::Manager</a>, <a href="https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.2/docs/md/OO/Plugin/Class.md">OO::Plugin::Class</a></p>
 
     </div>
     
