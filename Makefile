@@ -42,7 +42,7 @@ vpath %.pod6 $(dir $(POD_SRC))
 #vpath %.md $(MD_SUBDIRS)
 #vpath %.html $(HTML_SUBDIRS)
 
-.PHONY: all html test author-test release-test clean-repo build depends release meta6_mod meta \
+.PHONY: all html test author-test release-test is-repo-clean build depends release meta6_mod meta \
 		archive upload clean install doc md html docs_dirs
 
 %.md $(addsuffix /%.md,$(MD_SUBDIRS)):: %.pm6
@@ -89,7 +89,7 @@ release-test:
 	@echo "===> Release testing"
 	@RELEASE_TESTING=1 $(PROVE)
 
-clean-repo:
+is-repo-clean:
 	@git diff-index --quiet HEAD || (echo "*ERROR* Repository is not clean, commit your changes first!"; exit 1)
 
 build: depends doc
@@ -98,7 +98,7 @@ depends: meta
 	@echo "===> Installing dependencies"
 	@zef --deps-only install .
 
-release: build clean-repo release-test archive
+release: build is-repo-clean release-test archive
 	@echo "===> Done releasing"
 
 meta6_mod:
