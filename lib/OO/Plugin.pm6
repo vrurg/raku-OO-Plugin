@@ -71,11 +71,11 @@ Restarts current execution chain.
 =head2 Classes
 
 C<PluginMessage> and <MethodHandlerMsg> are re-exported from
-L<OO::Plugin::Class|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.2/docs/md/OO/Plugin/Class.md>.
+L<OO::Plugin::Class|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.901/docs/md/OO/Plugin/Class.md>.
 
 =end pod
 
-module OO::Plugin:ver<0.0.900>:auth<github:vrurg> {
+module OO::Plugin:ver<0.0.901>:auth<github:vrurg> {
     use OO::Plugin::Exception;
 
     our proto plugin-meta (|) is export {*}
@@ -253,9 +253,9 @@ sub EXPORT {
 
 =head1 SEE Also
 
-L<OO::Plugin::Manual|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.2/docs/md/OO/Plugin/Manual.md>,
-L<OO::Plugin::Manager|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.2/docs/md/OO/Plugin/Manager.md>,
-L<OO::Plugin::Class|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.2/docs/md/OO/Plugin/Class.md>
+L<OO::Plugin::Manual|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.901/docs/md/OO/Plugin/Manual.md>,
+L<OO::Plugin::Manager|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.901/docs/md/OO/Plugin/Manager.md>,
+L<OO::Plugin::Class|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.901/docs/md/OO/Plugin/Class.md>
 
 =AUTHOR  Vadim Belman <vrurg@cpan.org>
 

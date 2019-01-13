@@ -70,14 +70,15 @@ Routines
 Classes
 -------
 
-`PluginMessage` and <MethodHandlerMsg> are re-exported from [OO::Plugin::Class](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.2/docs/md/OO/Plugin/Class.md).
+`PluginMessage` and <MethodHandlerMsg> are re-exported from [OO::Plugin::Class](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.901/docs/md/OO/Plugin/Class.md).
 
 SEE Also
 ========
 
-[OO::Plugin::Manual](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.2/docs/md/OO/Plugin/Manual.md), [OO::Plugin::Manager](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.2/docs/md/OO/Plugin/Manager.md), [OO::Plugin::Class](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.2/docs/md/OO/Plugin/Class.md)
+[OO::Plugin::Manual](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.901/docs/md/OO/Plugin/Manual.md), [OO::Plugin::Manager](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.901/docs/md/OO/Plugin/Manager.md), [OO::Plugin::Class](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.901/docs/md/OO/Plugin/Class.md)
 
 AUTHOR
 ======
 
 Vadim Belman <vrurg@cpan.org>
+
