@@ -66,16 +66,14 @@ all: release
 
 doc: docs_dirs doc_ver_patch md html
 
-docs_dirs: $(MD_SUBDIRS) $(HTML_SUBDIRS)
-	@echo "===> Re-creating docs directory structure"
-	@mkdir -p $^
-
-doc_ver_patch:
-	@for src in $(DOC_SRC); do ./build-tools/patch-doc.p6 -r $$src; done
+docs_dirs: | $(MD_SUBDIRS) $(HTML_SUBDIRS)
 
 $(MD_SUBDIRS) $(HTML_SUBDIRS):
 	@echo "===> mkdir" $@
 	@mkdir -p $@
+
+doc_ver_patch:
+	@for src in $(DOC_SRC); do ./build-tools/patch-doc.p6 -r $$src; done
 
 md: ./README.md $(addprefix $(MD_DIR)/,$(patsubst %.pod6,%.md,$(patsubst %.pm6,%.md,$(DOC_DEST))))
 
