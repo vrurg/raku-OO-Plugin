@@ -43,10 +43,14 @@ grammar MyPOD {
 
     proto token pod-link {*}
     multi token pod-link:sym<mod-url> {
-        'L' '<' <link-module> '|' <link-url> '>'
+        'L' '<' <link-text> '|' <link-url> '>'
     }
     multi token pod-link:sym<mod-only> {
         'L' '<' <link-module> '>'
+    }
+
+    token link-text {
+        <-[\|\>]>+
     }
 
     token link-module {
