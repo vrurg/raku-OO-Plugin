@@ -67,7 +67,6 @@ all: release
 doc: docs_dirs doc_ver_patch md html
 
 docs_dirs: $(MD_SUBDIRS) $(HTML_SUBDIRS)
-	@echo "===> Re-creating docs directory structure"
 	@mkdir -p $^
 
 doc_ver_patch:

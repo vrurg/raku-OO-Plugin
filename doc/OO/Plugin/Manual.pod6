@@ -126,14 +126,11 @@ consideration a couple of plugin attributes such as:
 Priorities could be of three different levels: I<first>, I<normal>, and I<last>. Their names suggest that user wants
 a plugin to be one of the first in the list, one of the last, or in the middle. The latter is the default.
 
-Within each priority a user can define in what particular order he wants the plugins. For example, lets say we have
-plugins I<P1>, I<P2>, I<P3>, and I<P4> – all assigned with I<first> priority. Additionally, the user specifies that he
-wants I<P2> to go after I<P3>. In this case the manager will attempt to arrange plugins in a way, that I<P3> will go
-first, then followed by I<P2>, then by I<P1> and I<P4> in no particular order. Then these four will be followed by
-plugins with lower priorities.
+Within each priority a user can define in what particular order he wants the plugins. See
+L<section|#user-defined-ordering> below.
 
 To simplify user's life we don't want to make it his responsibility to find out if a I<Plugin1> only works if it
-follows, say, I<Plugin2>. The framework lets a plugin define these kinds of relations. More than that, it is also
+follows, say, I<Plugin2>. The framework lets plugins define these kinds of relations. More than that, it is also
 possible to specify wether the relation is desirable or it is demanded. Consider the followin code:
 
     plugin Plugin1 after Plugin2 before Plugin3 demands Plugin4, Plugin5 {
@@ -148,6 +145,20 @@ possibly with some other plugins too, they form a circular dependency (see below
 
 On the  other hand, C<demand> means that if it can't be fulfilled then the only way to resolve the situation is to
 disable this plugin.
+
+=head3 User Defined Ordering
+
+It is possible for a user to specifically set the wanted order of plugins within each priority. E.g., for a set of
+plugins  I<P1, P2, P3, P4, P5, P6, P7, P8, P9, P10> a user can specify that:
+
+=item I<P7>, I<P3>, I<P5> must go I<first> and preserve the order specified; i.e. I<P5> must go after I<P3>, and I<P3>
+must go after I<P7>.
+=item I<P4>, I<P1>, I<P8> must got I<last> and preserve the orider specified.
+
+For user-ordered plugins there is a rule that they will go first within their priority if they belong to I<first> or
+I<normal>; and they will go after unordered ones within I<last>.
+
+B<NOTE> Read the followin section carefully as the resulting order might differ from user expectations.
 
 =head3 Sorting
 

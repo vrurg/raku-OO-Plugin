@@ -31,8 +31,9 @@
  <tr class="toc-level-2"><td class="toc-number">3.1</td><td class="toc-text"><a href="#Basics">Basics</a></td></tr>
                              <tr class="toc-level-2"><td class="toc-number">3.2</td><td class="toc-text"><a href="#Pre-loading_Plugins_And_Naming.">Pre-loading Plugins And Naming.</a></td></tr>
                     <tr class="toc-level-2"><td class="toc-number">3.3</td><td class="toc-text"><a href="#Ordering_And_Priorities">Ordering And Priorities</a></td></tr>
-                                                                 <tr class="toc-level-3"><td class="toc-number">3.3.1</td><td class="toc-text"><a href="#Sorting">Sorting</a></td></tr>
-                                                <tr class="toc-level-3"><td class="toc-number">3.3.2</td><td class="toc-text"><a href="#How_Ordering_Is_Used?">How Ordering Is Used?</a></td></tr>
+                                             <tr class="toc-level-3"><td class="toc-number">3.3.1</td><td class="toc-text"><a href="#User_Defined_Ordering">User Defined Ordering</a></td></tr>
+                                     <tr class="toc-level-3"><td class="toc-number">3.3.2</td><td class="toc-text"><a href="#Sorting">Sorting</a></td></tr>
+                                                <tr class="toc-level-3"><td class="toc-number">3.3.3</td><td class="toc-text"><a href="#How_Ordering_Is_Used?">How Ordering Is Used?</a></td></tr>
   <tr class="toc-level-2"><td class="toc-number">3.4</td><td class="toc-text"><a href="#Writing_A_Plugin">Writing A Plugin</a></td></tr>
                       <tr class="toc-level-3"><td class="toc-number">3.4.1</td><td class="toc-text"><a href="#Method_Handling">Method Handling</a></td></tr>
                                          <tr class="toc-level-4"><td class="toc-number">3.4.1.1</td><td class="toc-text"><a href="#Method_Return_Value">Method Return Value</a></td></tr>
@@ -124,13 +125,22 @@ plugin Plugin2 {
 </li>
 </ul>
 <p>Priorities could be of three different levels: <em>first</em>, <em>normal</em>, and <em>last</em>. Their names suggest that user wants a plugin to be one of the first in the list, one of the last, or in the middle. The latter is the default.</p>
-<p>Within each priority a user can define in what particular order he wants the plugins. For example, lets say we have plugins <em>P1</em>, <em>P2</em>, <em>P3</em>, and <em>P4</em> – all assigned with <em>first</em> priority. Additionally, the user specifies that he wants <em>P2</em> to go after <em>P3</em>. In this case the manager will attempt to arrange plugins in a way, that <em>P3</em> will go first, then followed by <em>P2</em>, then by <em>P1</em> and <em>P4</em> in no particular order. Then these four will be followed by plugins with lower priorities.</p>
-<p>To simplify user&#39;s life we don&#39;t want to make it his responsibility to find out if a <em>Plugin1</em> only works if it follows, say, <em>Plugin2</em>. The framework lets a plugin define these kinds of relations. More than that, it is also possible to specify wether the relation is desirable or it is demanded. Consider the followin code:</p>
+<p>Within each priority a user can define in what particular order he wants the plugins. See <a href="#user-defined-ordering">section</a> below.</p>
+<p>To simplify user&#39;s life we don&#39;t want to make it his responsibility to find out if a <em>Plugin1</em> only works if it follows, say, <em>Plugin2</em>. The framework lets plugins define these kinds of relations. More than that, it is also possible to specify wether the relation is desirable or it is demanded. Consider the followin code:</p>
 <pre class="pod-block-code">plugin Plugin1 after Plugin2 before Plugin3 demands Plugin4, Plugin5 {
     ...
 }</pre>
 <p>Though rather unlikely to be met in real life, this code demonstrates what can be specified for a plugin. Here traits <code>after</code> and <code>before</code> (<strong>note</strong> that <code>before</code> is just a reverse of <code>after</code>. I.e. <code>Plugin1 before Plugin2</code> is the same as <code>Plugin2 after Plugin1</code>) define desirable relations. In other words, no fatalities would happen if these relations are broken. By &#39;broken&#39; we mean that either <em>Plugin2</em> or <em>Plugin3</em> are missing; or together with <em>Plugin1</em> and, possibly with some other plugins too, they form a circular dependency (see below about sorting).</p>
 <p>On the other hand, <code>demand</code> means that if it can&#39;t be fulfilled then the only way to resolve the situation is to disable this plugin.</p>
+<h3 id="User_Defined_Ordering"><a class="u" href="#___top" title="go to top of document">User Defined Ordering</a></h3>
+<p>It is possible for a user to specifically set the wanted order of plugins within each priority. E.g., for a set of plugins <em>P1, P2, P3, P4, P5, P6, P7, P8, P9, P10</em> a user can specify that:</p>
+<ul><li><p><em>P7</em>, <em>P3</em>, <em>P5</em> must go <em>first</em> and preserve the order specified; i.e. <em>P5</em> must go after <em>P3</em>, and <em>P3</em> must go after <em>P7</em>.</p>
+</li>
+<li><p><em>P4</em>, <em>P1</em>, <em>P8</em> must got <em>last</em> and preserve the orider specified.</p>
+</li>
+</ul>
+<p>For user-ordered plugins there is a rule that they will go first within their priority if they belong to <em>first</em> or <em>normal</em>; and they will go after unordered ones within <em>last</em>.</p>
+<p><strong>NOTE</strong> Read the followin section carefully as the resulting order might differ from user expectations.</p>
 <h3 id="Sorting"><a class="u" href="#___top" title="go to top of document">Sorting</a></h3>
 <p>The manager will do its best to conform all the ordering parameters. But due to the complexity of the matter the only rule which can be taken for granted is:</p>
 <ul><li><p><em>a demanded plugin will preceed the one which demands it</em></p>

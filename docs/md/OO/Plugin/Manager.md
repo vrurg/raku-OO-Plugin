@@ -112,6 +112,44 @@ Returns plugin's META `Hash`.
 
     Faster version, avoids name normalization.
 
+routine info `info( Str:D $plugin )`
+------------------------------------
+
+Returns a copy of information hash on a plugin. The hash contains the following keys:
+
+  * `priority`
+
+    Priority (see [`PlugPriority`](#enum-plugpriority))
+
+  * `shortname`
+
+    Plugin's short name
+
+  * `type`
+
+    Type (class) object of the plugin
+
+  * `version`
+
+    Version (`Version` object)
+
+routine set-priority
+--------------------
+
+Set plugins priority in the plugin order.
+
+  * `set-priority( @plugins, PlugPriority:D :$priority, :$with-order? )`
+
+    `set-priority( *@plugins, PlugPriority:D :$priority, :$with-order? )`
+
+    The most comprehensive version of the method. Allow not only setting of the priority for a bulk of the plugins but also to define their order within the specified priority when `:with-order` is used.
+
+    *Note* that each new call of this method with `:with-order` adverb will override previously set order for the specified priority.
+
+  * `set-priority( $plugin, PlugPriority:D :$priority )`
+
+See [`PlugPriority`](#enum-plugpriority)
+
 SEE Also
 ========
 

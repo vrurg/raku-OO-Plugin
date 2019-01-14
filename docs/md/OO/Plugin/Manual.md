@@ -106,9 +106,9 @@ It is possible for a two more plugins to be handling same method, class, or call
 
 Priorities could be of three different levels: *first*, *normal*, and *last*. Their names suggest that user wants a plugin to be one of the first in the list, one of the last, or in the middle. The latter is the default.
 
-Within each priority a user can define in what particular order he wants the plugins. For example, lets say we have plugins *P1*, *P2*, *P3*, and *P4* – all assigned with *first* priority. Additionally, the user specifies that he wants *P2* to go after *P3*. In this case the manager will attempt to arrange plugins in a way, that *P3* will go first, then followed by *P2*, then by *P1* and *P4* in no particular order. Then these four will be followed by plugins with lower priorities.
+Within each priority a user can define in what particular order he wants the plugins. See [section](#user-defined-ordering) below.
 
-To simplify user's life we don't want to make it his responsibility to find out if a *Plugin1* only works if it follows, say, *Plugin2*. The framework lets a plugin define these kinds of relations. More than that, it is also possible to specify wether the relation is desirable or it is demanded. Consider the followin code:
+To simplify user's life we don't want to make it his responsibility to find out if a *Plugin1* only works if it follows, say, *Plugin2*. The framework lets plugins define these kinds of relations. More than that, it is also possible to specify wether the relation is desirable or it is demanded. Consider the followin code:
 
     plugin Plugin1 after Plugin2 before Plugin3 demands Plugin4, Plugin5 {
         ...
@@ -117,6 +117,18 @@ To simplify user's life we don't want to make it his responsibility to find out 
 Though rather unlikely to be met in real life, this code demonstrates what can be specified for a plugin. Here traits `after` and `before` (**note** that `before` is just a reverse of `after`. I.e. `Plugin1 before Plugin2` is the same as `Plugin2 after Plugin1`) define desirable relations. In other words, no fatalities would happen if these relations are broken. By 'broken' we mean that either *Plugin2* or *Plugin3* are missing; or together with *Plugin1* and, possibly with some other plugins too, they form a circular dependency (see below about sorting).
 
 On the other hand, `demand` means that if it can't be fulfilled then the only way to resolve the situation is to disable this plugin.
+
+### User Defined Ordering
+
+It is possible for a user to specifically set the wanted order of plugins within each priority. E.g., for a set of plugins *P1, P2, P3, P4, P5, P6, P7, P8, P9, P10* a user can specify that:
+
+  * *P7*, *P3*, *P5* must go *first* and preserve the order specified; i.e. *P5* must go after *P3*, and *P3* must go after *P7*.
+
+  * *P4*, *P1*, *P8* must got *last* and preserve the orider specified.
+
+For user-ordered plugins there is a rule that they will go first within their priority if they belong to *first* or *normal*; and they will go after unordered ones within *last*.
+
+**NOTE** Read the followin section carefully as the resulting order might differ from user expectations.
 
 ### Sorting
 

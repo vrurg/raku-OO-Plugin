@@ -232,6 +232,33 @@ multi method meta ( Str:D :$fqn! --> Hash ) {
     $!registry.plugin-meta( :$fqn )
 }
 
+=begin pod
+=head2 routine info
+C<info( Str:D $plugin )>
+
+Returns a copy of information hash on a plugin. The hash contains the following keys:
+
+=begin item
+C<priority>
+
+Priority (see L<C<PlugPriority>|#enum-plugpriority>)
+=end item
+=begin item
+C<shortname>
+
+Plugin's short name
+=end item
+=begin item
+C<type>
+
+Type (class) object of the plugin
+=end item
+=begin item
+C<version>
+
+Version (C<Version> object)
+=end item
+=end pod
 method info ( Str:D $plugin --> Hash ) {
     my $fqn = self.normalize-name( $plugin );
     # $fqn would contain Failure if the name cannot be normalized.
@@ -240,6 +267,26 @@ method info ( Str:D $plugin --> Hash ) {
     %!mod-info{ $fqn }.clone
 }
 
+=begin pod
+=head2 routine set-priority
+
+Set plugins priority in the plugin order.
+
+=begin item
+C<set-priority( @plugins, PlugPriority:D :$priority, :$with-order? )>
+
+C<set-priority( *@plugins, PlugPriority:D :$priority, :$with-order? )>
+
+The most comprehensive version of the method. Allow not only setting of the priority for a bulk of the plugins but also
+to define their order within the specified priority when C<:with-order> is used.
+
+I<Note> that each new call of this method with C<:with-order> adverb will override previously set order for the
+specified priority.
+=end item
+=item C<set-priority( $plugin, PlugPriority:D :$priority )>
+
+See L<C<PlugPriority>|#enum-plugpriority>
+=end pod
 proto method set-priority (|) {*}
 
 # If :with-order is set then the order of plugins in the array is preserved for the corresponding priority.
@@ -257,7 +304,7 @@ multi method set-priority ( |params( @plugins, PlugPriority:D $priority, :$with-
     }
 }
 
-multi method set-priority ( @plugins, PlugPriority:D :$priority!, :$with-order? ) {
+multi method set-priority ( @plugins, PlugPriority:D :$priority = plugNormal, :$with-order? ) {
     samewith( @plugins, $priority, :$with-order )
 }
 
@@ -318,7 +365,8 @@ method initialize ( |c-params --> ::?CLASS:D ) {
 
         my %mod-meta = self.meta( $fqn );
 
-        %!mod-info{ $fqn }<version> = %mod-meta<version> // $_ with type.^ver;
+        # TODO: Make sure the version is defined for the plugin.
+        %!mod-info{ $fqn }<version> = %mod-meta<version> // $_ given type.^ver;
         %!mod-info{ $fqn }<shortname> = %mod-meta<name> // $shortname;
         %!mod-info{ $fqn }<priority> //= plugNormal;
         %!mod-info{ $fqn }<type> = type;
