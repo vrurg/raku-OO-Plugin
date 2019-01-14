@@ -72,8 +72,7 @@ class MyPOD-Actions {
     has $!ver-str = ~OO::Plugin.^ver;
 
     method version ($m) {
-        # note "USING VER: ", OO::Plugin.^ver;
-        $.replaced = Version.new( $m ) ≠ $!ver;
+        $.replaced ||= Version.new( $m ) ≠ $!ver;
         $m.make( $!ver-str );
     }
 
