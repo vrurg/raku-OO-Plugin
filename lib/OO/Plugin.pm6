@@ -75,7 +75,7 @@ L<OO::Plugin::Class|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.902/docs/
 
 =end pod
 
-module OO::Plugin:ver<0.0.901>:auth<github:vrurg> {
+module OO::Plugin:ver<0.0.902>:auth<github:vrurg> {
     use OO::Plugin::Exception;
 
     our proto plugin-meta (|) is export {*}
