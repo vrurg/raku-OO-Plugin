@@ -59,11 +59,6 @@ method rc() returns Mu
 
 Suggested return value
 
-class OO::Plugin::Class::MethodHandlerMsg
------------------------------------------
-
-dfsfsds
-
 ### has Any:D $.object
 
 Instance of the object the original method has been called upon
