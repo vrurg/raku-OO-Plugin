@@ -1,49 +1,49 @@
 {
-  "name": "OO::Plugin",
+  "auth": "github:vrurg",
   "depends": [
     "WhereList",
     "File::Find"
   ],
-  "support": {
-    "source": "https://github.com/vrurg/Perl6-OO-Plugin.git"
-  },
-  "resources": [
-    
-  ],
-  "source-url": "git://github.com/vrurg/Perl6-OO-Plugin.git",
-  "meta-version": "0",
-  "tags": [
-    "OO",
-    "Plugin",
-    "Plugins"
-  ],
   "provides": {
-    "OO::Plugin::Metamodel::PlugRoleHOW": "lib/OO/Plugin/Metamodel/PlugRoleHOW.pm6",
     "OO::Plugin::Manager": "lib/OO/Plugin/Manager.pm6",
     "OO::Plugin::Declarations": "lib/OO/Plugin/Declarations.pm6",
-    "OO::Plugin": "lib/OO/Plugin.pm6",
     "OO::Plugin::Class": "lib/OO/Plugin/Class.pm6",
+    "OO::Plugin": "lib/OO/Plugin.pm6",
+    "OO::Plugin::Metamodel::PlugRoleHOW": "lib/OO/Plugin/Metamodel/PlugRoleHOW.pm6",
+    "OO::Plugin::Metamodel::PluginHOW": "lib/OO/Plugin/Metamodel/PluginHOW.pm6",
     "OO::Plugin::Registry": "lib/OO/Plugin/Registry.pm6",
-    "OO::Plugin::Exception": "lib/OO/Plugin/Exception.pm6",
-    "OO::Plugin::Metamodel::PluginHOW": "lib/OO/Plugin/Metamodel/PluginHOW.pm6"
+    "OO::Plugin::Exception": "lib/OO/Plugin/Exception.pm6"
   },
   "build-depends": [
     "META6",
     "p6doc",
     "Pod::To::Markdown"
   ],
-  "authors": [
-    "Vadim Belman <vrurg@cpan.org>"
+  "license": "Artistic-2.0",
+  "perl": "6.d",
+  "support": {
+    "source": "https://github.com/vrurg/Perl6-OO-Plugin.git"
+  },
+  "resources": [
+    
   ],
-  "production": true,
   "test-depends": [
     "Test",
     "Test::META",
     "Test::When"
   ],
-  "license": "Artistic-2.0",
-  "description": "Framework for working with OO application plugins",
-  "auth": "github:vrurg",
+  "production": true,
+  "name": "OO::Plugin",
+  "authors": [
+    "Vadim Belman <vrurg@cpan.org>"
+  ],
+  "source-url": "git://github.com/vrurg/Perl6-OO-Plugin.git",
+  "tags": [
+    "OO",
+    "Plugin",
+    "Plugins"
+  ],
   "version": "0.0.3",
-  "perl": "6.d"
+  "meta-version": "0",
+  "description": "Framework for working with OO application plugins"
 }
