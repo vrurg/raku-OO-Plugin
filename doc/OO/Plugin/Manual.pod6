@@ -1,3 +1,4 @@
+
 =begin pod
 
 =head1 PREFACE
@@ -197,7 +198,8 @@ This will be covered in the section below.
 
 =head2 Writing A Plugin
 
-A plugin is an instance of a class inheriting from a C<Plugin> class defined in L<OO::Plugin::Class> module. To reduce
+A plugin is an instance of a class inheriting from a C<Plugin> class defined in
+L<OO::Plugin::Class|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.3/docs/md/OO/Plugin/Class.md> module. To reduce
 the boilerplate and provide better readability of the code special class declarator C<plugin> is provided:
 
     plugin MyPlugin {
@@ -554,7 +556,8 @@ hash:
                     ;
     }
 
-For the same key C<key1> the value from C<plugin-meta> will take precedence. Generally speaking, the precedence of sources for the meta are:
+For the same key C<key1> the value from C<plugin-meta> will take precedence. Generally speaking, the precedence of
+sources for the meta are:
 
 =item plugin declaration
 =item C<plugin-meta>
@@ -589,6 +592,34 @@ Another meta key taken from plugin declaration is C<version>:
     }
 
 unless there is manually defined C<version> key declared by the programmer.
+
+=head2 Pluggables
+
+The framework provides a special trait C<is pluggable> which is applicable to both classes and methods and marks those
+of them which the users wants to allow to be overriden. For example:
+
+    class Foo is pluggable {
+        ...
+    }
+
+    class Bar {
+        ...
+        method plug-me is pluggable {
+            ...
+        }
+    }
+
+The outcome of applying the trait differs depending on wether the plugin manager is in I<strict> or I<loose> mode. In
+the former it will raise an error for any attempt to override an unpluggable class or attach a handler to an unpluggable
+method. In the latter (which is the default) any class or method are considered pluggable.
+
+A user can request a registry of pluggables from
+L<OO::Plugin::Registry|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.3/docs/md/OO/Plugin/Registry.md>. This
+information can be used, for example, to provide a plugin developer with the information about what objects are opened
+for "suggestions".
+
+Note though that in I<loose> mode the manager will register any class or method requested by a plugin as pluggable. This
+functionality is considered experimental and might be a subject for change in the future.
 
 =head1 SEE ALSO
 

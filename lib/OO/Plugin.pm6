@@ -44,7 +44,7 @@ The framework also supports:
 
 Not yet supported but planned for the future is plugin compatibility management.
 
-Read more in L<OO::Plugin::Manual>.
+Read more in L<OO::Plugin::Manual|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.3/docs/md/OO/Plugin/Manual.md>.
 
 =head1 EXPORTS
 

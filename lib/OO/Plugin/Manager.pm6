@@ -10,11 +10,31 @@ use OO::Plugin::Exception;
 
 =head1 NAME
 
-OO::Plugin::Manager
+OO::Plugin::Manager - the conductor for a plugin orchestra.
 
 =head1 SYNOPSIS
 
-...
+    my $mgr = OO::Plugin::Manager.new( base => 'MyApp' )
+                .load-plugins
+                .initialize( plugin-parameter => $param-value );
+
+=head1 DESCRIPTION
+
+Most of the description for the functionality of this module can be found in L<OO::Plugin::Manual|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.3/docs/md/OO/Plugin/Manual.md>. Here we just cover
+the technical details and attributes/methods.
+
+=head1 TYPES
+
+=head2 enum C<PlugPriority>
+
+Constants defining where the user whants to have a particular plugin:
+
+=item C<plugFirst> – in the beginning of the plugin list
+=item C<plugNormal> – in the middle of the list
+=item C<plugLast> – in the end of the list
+
+Read about L<sorting|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.3/docs/md/OO/Plugin/Manual.md#sorting> in
+L<OO::Plugin::Manual|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.3/docs/md/OO/Plugin/Manual.md>.
 
 =end pod
 
@@ -30,22 +50,33 @@ my class EventPacket {
 }
 
 # --- ATTRIBUTES
+=begin pod
 
+=head1 ATTRIBUTES
+
+=end pod
+
+#| When _True_ will print debug info to the console.
 has Bool $.debug is rw = False;
 
+#| The base namespace where to look for plugin modules. See @.namespaces below.
 has Str $.base;
+#|(
+Defines a list of namespaces within $.base attribute where to look from plugin modules. I.e. if set to the default
+<Plugin Plugins> then the manager will load modules from ::($.base)::Plugin or ::($.base)::Plugins.
+)
 has @.namespaces = <Plugin Plugins>;
-#| Callback to validate plugin module before trying to load it.
-has &.validator is rw where * ~~ :( Str $ --> Bool );
+#| Callback to validate plugin. Allows the user code to check for plugin compatibility, for example. (Not implemented yet)
+has &.validator is rw where * ~~ :( $ --> Bool );
 
 #| In strict mode non-pluggable classes/methods cannot be overriden.
 has Bool $.strict = False;
 
-# List of hashes of:
-#  'Module::Name' => "Error String"
+#| Errors collected while loading plugin modules.
+#| List of hashes of form 'Module::Name' => "Error String".
 has @.load-errors;
 
-# The manager has been initialized.
+#| Indicates that the manager object has been initialized; i.e. method initialize() has been run.
 has Bool $.initialized = False;
 
 # :moduleName("text reason")
@@ -95,14 +126,37 @@ has %!cached;
 has Promise $!event-dispatcher;
 has Channel $!event-queue;
 has Lock $!ev-dispatch-lock .= new;
-# Number of simulatenous event handlers running
+#| Number of simulatenous event handlers running. Default is 3
 has Int:D $.event-workers where * > 0 = 3;
-# Number of seconds for the dispatcher to wait for another event after processing one.
+#| Number of seconds for the dispatcher to wait for another event after processing one. Default 1 sec.
 has Real:D $.ev-dispatcher-timeout = 1.0;
+
+=begin pod
+
+=head1 METHODS
+
+=end pod
 
 submethod TWEAK (|) {
     $!registry = Plugin::Registry.instance;
 }
+
+=begin pod
+=head2 routine normalize-name
+=begin item
+C<normalize-name( Str:D $plugin, Bool :$strict = True )>
+
+Normalize plugin name, i.e. makes a name in any form and returns FQN. With C<:strict> fails if no plugin found by the
+name in C<$plugin>. With C<:!strict> fails with a text error. Always fails if more than one variant for the given name
+found what would happen when two or more plugins register common short name for themselves.
+=end item
+
+=begin item
+C<normalize-name( Str:D :$plugin, Bool :$strict = True )>
+
+Similar to the above variant except that it takes named argument C<:plugin>.
+=end item
+=end pod
 
 # Due to a slight chance of using more than one plugin manager within same process we can't rely on registry's name
 # mapping service because it may contain plugins from another managers too. Though this scenario has enough problems
@@ -110,7 +164,6 @@ submethod TWEAK (|) {
 
 # Only works with plugin names currently. But might be extended to other entities if necessary.
 proto method normalize-name (|) {*}
-# Normalize plugin name by default. Returns its argument if no mapping found and :!strict is used
 multi method normalize-name ( Str:D $plugin, Bool :$strict = True --> Str:D ) {
     return $plugin with %!mod-info{ $plugin }; # The name is already FQN
     my @name = %!short2fqn{ $plugin }.keys;
@@ -121,10 +174,33 @@ multi method normalize-name ( Str:D $plugin, Bool :$strict = True --> Str:D ) {
     fail "Short plugin name '$plugin' maps into more than one FQN" if @name.elems > 1;
     @name[0]
 }
-multi method normalize-name ( Str:D :$plugin! --> Str:D ) {
-    samewith( $plugin )
+multi method normalize-name ( Str:D :$plugin!, Bool :$strict = True --> Str:D ) {
+    samewith( $plugin, :$strict )
 }
 
+=begin pod
+=head2 routine short-name
+
+Takes a plugin name and returns its corresponding short name.
+
+=begin item
+C<short-name( Str:D $name )>
+=end item
+
+=begin item
+C<short-name( Str:D :$fqn )>
+
+A faster variant of the method because it doesn't attempt to normalize the name and performs fast lookup by FQN.
+=end item
+
+=begin item
+C<short-name( Plugin:U \plugin-type )>
+
+Gives short name by using plugin's class itself. This is a faster version too because it also uses FQN lookup.
+
+    my $sname = $plugin-manager.short-name( $plugin-obj.WHAT );
+=end item
+=end pod
 proto method short-name (|) {*}
 multi method short-name ( Str:D $name ) {
     %!mod-info{ self.normalize-name( $name ) }<shortname>
@@ -136,6 +212,18 @@ multi method short-name ( Plugin:U \ptype ) {
     %!mod-info{ ptype.^name }<shortname>
 }
 
+=begin pod
+=head2 routine meta
+
+Returns plugin's META C<Hash>.
+
+=item C<meta( Str:D $plugin )>
+=begin item
+C<meta( Str:D :$fqn )>
+
+Faster version, avoids name normalization.
+=end item
+=end pod
 proto method meta (|) {*}
 multi method meta ( Str:D $plugin --> Hash ) {
     $!registry.plugin-meta( $plugin )
@@ -194,9 +282,6 @@ method load-plugins ( --> ::?CLASS:D ) {
     my @mods = self!find-modules;
     MOD:
     for @mods -> $mod {
-        with &!validator {
-            next MOD unless &!validator( $mod );
-        }
         require ::($mod);
 
         CATCH {
@@ -421,7 +506,7 @@ method class ( Any:U \type --> Any:U ) {
     my Mu:U $plug-class;
     if !$.strict or $!registry.is-pluggable( type ) {
         # Force-register class as pluggable to allow for later short<->fqn name transofrmations
-        $!registry.register-pluggable( type );
+        $!registry.register-pluggable( type ); # EXPERIMENTAL Class name mapping might not be needed after all.
         $plug-class := self!build-class( type );
     }
     else {
@@ -1038,3 +1123,17 @@ method !dispatch-event {
 method !dbg (*@msg) {
     note |@msg if $.debug;
 }
+
+
+=begin pod
+
+=head1 SEE Also
+
+L<OO::Plugin::Manual|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.3/docs/md/OO/Plugin/Manual.md>,
+L<OO::Plugin|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.3/docs/md/OO/Plugin.md>,
+L<OO::Plugin::Class|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.3/docs/md/OO/Plugin/Class.md>
+L<OO::Plugin::Registry|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.3/docs/md/OO/Plugin/Registry.md>,
+
+=AUTHOR  Vadim Belman <vrurg@cpan.org>
+
+=end pod
