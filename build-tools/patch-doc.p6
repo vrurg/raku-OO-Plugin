@@ -41,8 +41,12 @@ grammar MyPOD {
         .+? <?before 'L<' || [^^ '=end']>
     }
 
-    token pod-link {
+    proto token pod-link {*}
+    multi token pod-link:sym<mod-url> {
         'L' '<' <link-module> '|' <link-url> '>'
+    }
+    multi token pod-link:sym<mod-only> {
+        'L' '<' <link-module> '>'
     }
 
     token link-module {
@@ -60,12 +64,26 @@ grammar MyPOD {
 
 class MyPOD-Actions {
     has Bool $.replaced is rw = False;
+    has $!ver = OO::Plugin.^ver;
+    has $!ver-str = ~OO::Plugin.^ver;
 
     method version ($m) {
         # note "USING VER: ", OO::Plugin.^ver;
-        my $pver = OO::Plugin.^ver;
-        $.replaced = Version.new( $m ) ≠ $pver;
-        $m.make( ~$pver );
+        $.replaced = Version.new( $m ) ≠ $!ver;
+        $m.make( $!ver-str );
+    }
+
+    method pod-link:sym<mod-only> ( $m ) {
+        my $link-mod = $m<link-module>.made;
+        my $link-path = $link-mod.subst('::', '/', :g);
+        $m.make(
+            'L<' ~ $m<link-module>.made
+                ~ '|https://github.com/vrurg/Perl6-OO-Plugin/blob/v'
+                ~ $!ver-str ~ '/docs/md/'
+                ~ $link-path ~ '.md'
+                ~ '>'
+        );
+        $.replaced = True;
     }
 
     # method link-url ($m) {
