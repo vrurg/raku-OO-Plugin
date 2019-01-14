@@ -162,7 +162,7 @@ This will be covered in the section below.
 Writing A Plugin
 ----------------
 
-A plugin is an instance of a class inheriting from a `Plugin` class defined in [OO::Plugin::Class](OO::Plugin::Class) module. To reduce the boilerplate and provide better readability of the code special class declarator `plugin` is provided:
+A plugin is an instance of a class inheriting from a `Plugin` class defined in [OO::Plugin::Class](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.902/docs/md/OO/Plugin/Class.md) module. To reduce the boilerplate and provide better readability of the code special class declarator `plugin` is provided:
 
     plugin MyPlugin {
         ...
@@ -477,8 +477,30 @@ Another meta key taken from plugin declaration is `version`:
 
 unless there is manually defined `version` key declared by the programmer.
 
+Pluggables
+----------
+
+The framework provides a special trait `is pluggable` which is applicable to both classes and methods and marks those of them which the users wants to allow to be overriden. For example:
+
+    class Foo is pluggable {
+        ...
+    }
+
+    class Bar {
+        ...
+        method plug-me is pluggable {
+            ...
+        }
+    }
+
+The outcome of applying the trait differs depending on wether the plugin manager is in *strict* or *loose* mode. In the former it will raise an error for any attempt to override an unpluggable class or attach a handler to an unpluggable method. In the latter (which is the default) any class or method are considered pluggable.
+
+A user can request a registry of pluggables from [OO::Plugin::Registry](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.902/docs/md/OO/Plugin/Registry.md). This information can be used, for example, to provide a plugin developer with the information about what objects are opened for "suggestions".
+
+Note though that in *loose* mode the manager will register any class or method requested by a plugin as pluggable. This functionality is considered experimental and might be a subject for change in the future.
+
 SEE ALSO
 ========
 
-[OO::Plugin](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.901/docs/md/OO/Plugin.md), [OO::Plugin::Manager](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.901/docs/md/OO/Plugin/Manager.md), [OO::Plugin::Class](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.901/docs/md/OO/Plugin/Class.md)
+[OO::Plugin](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.902/docs/md/OO/Plugin.md), [OO::Plugin::Manager](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.902/docs/md/OO/Plugin/Manager.md), [OO::Plugin::Class](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.902/docs/md/OO/Plugin/Class.md)
 

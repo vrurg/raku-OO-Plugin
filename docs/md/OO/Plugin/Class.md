@@ -9,7 +9,7 @@ EXPORTS
 Classes
 -------
 
-### class PluginMessage
+### class `PluginMessage`
 
 This class is used to provide a plugin with information about the current call. In its pure form the plugin manager is using objects of this class to communicate with callbacks.
 
@@ -59,15 +59,68 @@ method rc() returns Mu
 
 Suggested return value
 
+### class `MethodHandlerMsg`
+
+Inherits from `PluginMessage`. Used to provide information for method handlers.
+
 ### has Any:D $.object
 
-Instance of the object the original method has been called upon
+Instance of the object the original method has been called upon.
 
 ### has Str:D $.method
 
-Name of the method being called
+Name of the method being called.
 
 ### has <anon> $.stage
 
-Plug stage
+Stage of method call. Can be one of three strings: _before_, _around_, _after_.
+
+### class <Plugin>
+
+The base class of all plugins.
+
+### has <anon> $.plugin-manager
+
+The plugin manager object which created this plugin instance.
+
+### has Str:D $.name
+
+Plugin's fully qualified name.
+
+### has Str:D $.short-name
+
+Plugin's short name.
+
+### method on-event
+
+```perl6
+method on-event(
+    Str:D $name,
+    |
+) returns Mu
+```
+
+Event handler.
+
+### method on-callback
+
+```perl6
+method on-callback(
+    Str:D $cb-name,
+    OO::Plugin::Class::PluginMessage:D $msg,
+    |
+) returns Mu
+```
+
+Callback handler.
+
+SEE Also
+========
+
+[OO::Plugin::Manual](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.902/docs/md/OO/Plugin/Manual.md), [OO::Plugin::Manager](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.902/docs/md/OO/Plugin/Manager.md), [OO::Plugin::Class](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.902/docs/md/OO/Plugin.md)
+
+AUTHOR
+======
+
+Vadim Belman <vrurg@cpan.org>
 

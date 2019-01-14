@@ -27,16 +27,75 @@
 <caption><h2 id="TOC_Title">Table of Contents</h2></caption>
 <tr class="toc-level-1"><td class="toc-number">1</td><td class="toc-text"><a href="#NAME">NAME</a></td></tr>
   <tr class="toc-level-1"><td class="toc-number">2</td><td class="toc-text"><a href="#SYNOPSIS">SYNOPSIS</a></td></tr>
-   
+  <tr class="toc-level-1"><td class="toc-number">3</td><td class="toc-text"><a href="#DESCRIPTION">DESCRIPTION</a></td></tr>
+    <tr class="toc-level-1"><td class="toc-number">4</td><td class="toc-text"><a href="#TYPES">TYPES</a></td></tr>
+ <tr class="toc-level-2"><td class="toc-number">4.1</td><td class="toc-text"><a href="#enum_PlugPriority">enum <code class="pod-code-inline">PlugPriority</code></a></td></tr>
+             <tr class="toc-level-1"><td class="toc-number">5</td><td class="toc-text"><a href="#ATTRIBUTES">ATTRIBUTES</a></td></tr>
+          <tr class="toc-level-1"><td class="toc-number">6</td><td class="toc-text"><a href="#METHODS">METHODS</a></td></tr>
+ <tr class="toc-level-2"><td class="toc-number">6.1</td><td class="toc-text"><a href="#routine_normalize-name">routine normalize-name</a></td></tr>
+             <tr class="toc-level-2"><td class="toc-number">6.2</td><td class="toc-text"><a href="#routine_short-name">routine short-name</a></td></tr>
+        <tr class="toc-level-2"><td class="toc-number">6.3</td><td class="toc-text"><a href="#routine_meta">routine meta</a></td></tr>
+       <tr class="toc-level-1"><td class="toc-number">7</td><td class="toc-text"><a href="#SEE_Also">SEE Also</a></td></tr>
+         
 </table>
 </nav>
 
     <div class="pod-body">
     <h1 id="NAME"><a class="u" href="#___top" title="go to top of document">NAME</a></h1>
-<p>OO::Plugin::Manager</p>
+<p>OO::Plugin::Manager - the conductor for a plugin orchestra.</p>
 <h1 id="SYNOPSIS"><a class="u" href="#___top" title="go to top of document">SYNOPSIS</a></h1>
-<p>...</p>
-<h1>Attribute.new: Callback to validate plugin module before trying to load it.</h1><h1>Attribute.new: In strict mode non-pluggable classes/methods cannot be overriden.</h1>
+<pre class="pod-block-code">my $mgr = OO::Plugin::Manager.new( base =&gt; &#39;MyApp&#39; )
+            .load-plugins
+            .initialize( plugin-parameter =&gt; $param-value );</pre>
+<h1 id="DESCRIPTION"><a class="u" href="#___top" title="go to top of document">DESCRIPTION</a></h1>
+<p>Most of the description for the functionality of this module can be found in <a href="https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.902/docs/md/OO/Plugin/Manual.md">OO::Plugin::Manual</a>. Here we just cover the technical details and attributes/methods.</p>
+<h1 id="TYPES"><a class="u" href="#___top" title="go to top of document">TYPES</a></h1>
+<h2 id="enum_PlugPriority"><a class="u" href="#___top" title="go to top of document">enum <code>PlugPriority</code></a></h2>
+<p>Constants defining where the user whants to have a particular plugin:</p>
+<ul><li><p><code>plugFirst</code> – in the beginning of the plugin list</p>
+</li>
+<li><p><code>plugNormal</code> – in the middle of the list</p>
+</li>
+<li><p><code>plugLast</code> – in the end of the list</p>
+</li>
+</ul>
+<p>Read about <a href="https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.902/docs/md/OO/Plugin/Manual.md#sorting">sorting</a> in <a href="https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.902/docs/md/OO/Plugin/Manual.md">OO::Plugin::Manual</a>.</p>
+<h1 id="ATTRIBUTES"><a class="u" href="#___top" title="go to top of document">ATTRIBUTES</a></h1>
+<h1>Attribute.new: When _True_ will print debug info to the console.</h1><h1>Attribute.new: The base namespace where to look for plugin modules. See @.namespaces below.</h1><h1>Attribute.new: Defines a list of namespaces within $.base attribute where to look from plugin modules. I.e. if set to the default &lt;Plugin Plugins&gt; then the manager will load modules from ::($.base)::Plugin or ::($.base)::Plugins.</h1><h1>Attribute.new: Callback to validate plugin. Allows the user code to check for plugin compatibility, for example. (Not implemented yet)</h1><h1>Attribute.new: In strict mode non-pluggable classes/methods cannot be overriden.</h1><h1>Attribute.new: Errors collected while loading plugin modules. List of hashes of form &#39;Module::Name&#39; =&gt; &quot;Error String&quot;.</h1><h1>Attribute.new: Indicates that the manager object has been initialized; i.e. method initialize() has been run.</h1><h1>Attribute.new: Number of simulatenous event handlers running. Default is 3</h1><h1>Attribute.new: Number of seconds for the dispatcher to wait for another event after processing one. Default 1 sec.</h1><h1 id="METHODS"><a class="u" href="#___top" title="go to top of document">METHODS</a></h1>
+<h2 id="routine_normalize-name"><a class="u" href="#___top" title="go to top of document">routine normalize-name</a></h2>
+<ul><li><p><code>normalize-name( Str:D $plugin, Bool :$strict = True )</code></p>
+<p>Normalize plugin name, i.e. makes a name in any form and returns FQN. With <code>:strict</code> fails if no plugin found by the name in <code>$plugin</code>. With <code>:!strict</code> fails with a text error. Always fails if more than one variant for the given name found what would happen when two or more plugins register common short name for themselves.</p>
+</li>
+<li><p><code>normalize-name( Str:D :$plugin, Bool :$strict = True )</code></p>
+<p>Similar to the above variant except that it takes named argument <code>:plugin</code>.</p>
+</li>
+</ul>
+<h2 id="routine_short-name"><a class="u" href="#___top" title="go to top of document">routine short-name</a></h2>
+<p>Takes a plugin name and returns its corresponding short name.</p>
+<ul><li><p><code>short-name( Str:D $name )</code></p>
+</li>
+<li><p><code>short-name( Str:D :$fqn )</code></p>
+<p>A faster variant of the method because it doesn&#39;t attempt to normalize the name and performs fast lookup by FQN.</p>
+</li>
+<li><p><code>short-name( Plugin:U \plugin-type )</code></p>
+<p>Gives short name by using plugin&#39;s class itself. This is a faster version too because it also uses FQN lookup.</p>
+<pre class="pod-block-code">my $sname = $plugin-manager.short-name( $plugin-obj.WHAT );</pre>
+</li>
+</ul>
+<h2 id="routine_meta"><a class="u" href="#___top" title="go to top of document">routine meta</a></h2>
+<p>Returns plugin&#39;s META <code>Hash</code>.</p>
+<ul><li><p><code>meta( Str:D $plugin )</code></p>
+</li>
+<li><p><code>meta( Str:D :$fqn )</code></p>
+<p>Faster version, avoids name normalization.</p>
+</li>
+</ul>
+<h1 id="SEE_Also"><a class="u" href="#___top" title="go to top of document">SEE Also</a></h1>
+<p><a href="https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.902/docs/md/OO/Plugin/Manual.md">OO::Plugin::Manual</a>, <a href="https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.902/docs/md/OO/Plugin.md">OO::Plugin</a>, <a href="https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.902/docs/md/OO/Plugin/Class.md">OO::Plugin::Class</a> <a href="https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.902/docs/md/OO/Plugin/Registry.md">OO::Plugin::Registry</a>,</p>
+<section><h1>AUTHOR</h1>
+<p>Vadim Belman &lt;vrurg@cpan.org&gt;</p>
+</section>
+
     </div>
     
     

@@ -44,7 +44,8 @@
                                        <tr class="toc-level-3"><td class="toc-number">3.4.4</td><td class="toc-text"><a href="#Events">Events</a></td></tr>
                    <tr class="toc-level-4"><td class="toc-number">3.4.4.1</td><td class="toc-text"><a href="#Nuances">Nuances</a></td></tr>
                 <tr class="toc-level-2"><td class="toc-number">3.5</td><td class="toc-text"><a href="#Plugin_META">Plugin META</a></td></tr>
-                                                   <tr class="toc-level-1"><td class="toc-number">4</td><td class="toc-text"><a href="#SEE_ALSO">SEE ALSO</a></td></tr>
+                                                   <tr class="toc-level-2"><td class="toc-number">3.6</td><td class="toc-text"><a href="#Pluggables">Pluggables</a></td></tr>
+                <tr class="toc-level-1"><td class="toc-number">4</td><td class="toc-text"><a href="#SEE_ALSO">SEE ALSO</a></td></tr>
      
 </table>
 </nav>
@@ -161,7 +162,7 @@ D, C, B, A</pre>
 <h3 id="How_Ordering_Is_Used?"><a class="u" href="#___top" title="go to top of document">How Ordering Is Used?</a></h3>
 <p>This will be covered in the section below.</p>
 <h2 id="Writing_A_Plugin"><a class="u" href="#___top" title="go to top of document">Writing A Plugin</a></h2>
-<p>A plugin is an instance of a class inheriting from a <code>Plugin</code> class defined in <a href="OO::Plugin::Class">OO::Plugin::Class</a> module. To reduce the boilerplate and provide better readability of the code special class declarator <code>plugin</code> is provided:</p>
+<p>A plugin is an instance of a class inheriting from a <code>Plugin</code> class defined in <a href="https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.902/docs/md/OO/Plugin/Class.md">OO::Plugin::Class</a> module. To reduce the boilerplate and provide better readability of the code special class declarator <code>plugin</code> is provided:</p>
 <pre class="pod-block-code">plugin MyPlugin {
     ...
 }</pre>
@@ -389,8 +390,23 @@ demand =&gt; &lt;Plugin5&gt;, # from %meta</pre>
     ...
 }</pre>
 <p>unless there is manually defined <code>version</code> key declared by the programmer.</p>
+<h2 id="Pluggables"><a class="u" href="#___top" title="go to top of document">Pluggables</a></h2>
+<p>The framework provides a special trait <code>is pluggable</code> which is applicable to both classes and methods and marks those of them which the users wants to allow to be overriden. For example:</p>
+<pre class="pod-block-code">class Foo is pluggable {
+    ...
+}
+
+class Bar {
+    ...
+    method plug-me is pluggable {
+        ...
+    }
+}</pre>
+<p>The outcome of applying the trait differs depending on wether the plugin manager is in <em>strict</em> or <em>loose</em> mode. In the former it will raise an error for any attempt to override an unpluggable class or attach a handler to an unpluggable method. In the latter (which is the default) any class or method are considered pluggable.</p>
+<p>A user can request a registry of pluggables from <a href="https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.902/docs/md/OO/Plugin/Registry.md">OO::Plugin::Registry</a>. This information can be used, for example, to provide a plugin developer with the information about what objects are opened for &quot;suggestions&quot;.</p>
+<p>Note though that in <em>loose</em> mode the manager will register any class or method requested by a plugin as pluggable. This functionality is considered experimental and might be a subject for change in the future.</p>
 <h1 id="SEE_ALSO"><a class="u" href="#___top" title="go to top of document">SEE ALSO</a></h1>
-<p><a href="https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.901/docs/md/OO/Plugin.md">OO::Plugin</a>, <a href="https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.901/docs/md/OO/Plugin/Manager.md">OO::Plugin::Manager</a>, <a href="https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.901/docs/md/OO/Plugin/Class.md">OO::Plugin::Class</a></p>
+<p><a href="https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.902/docs/md/OO/Plugin.md">OO::Plugin</a>, <a href="https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.902/docs/md/OO/Plugin/Manager.md">OO::Plugin::Manager</a>, <a href="https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.902/docs/md/OO/Plugin/Class.md">OO::Plugin::Class</a></p>
 
     </div>
     

@@ -44,7 +44,7 @@ The framework also supports:
 
 Not yet supported but planned for the future is plugin compatibility management.
 
-Read more in L<OO::Plugin::Manual>.
+Read more in L<OO::Plugin::Manual|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.902/docs/md/OO/Plugin/Manual.md>.
 
 =head1 EXPORTS
 
@@ -71,7 +71,7 @@ Restarts current execution chain.
 =head2 Classes
 
 C<PluginMessage> and <MethodHandlerMsg> are re-exported from
-L<OO::Plugin::Class|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.901/docs/md/OO/Plugin/Class.md>.
+L<OO::Plugin::Class|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.902/docs/md/OO/Plugin/Class.md>.
 
 =end pod
 
@@ -253,9 +253,9 @@ sub EXPORT {
 
 =head1 SEE Also
 
-L<OO::Plugin::Manual|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.901/docs/md/OO/Plugin/Manual.md>,
-L<OO::Plugin::Manager|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.901/docs/md/OO/Plugin/Manager.md>,
-L<OO::Plugin::Class|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.901/docs/md/OO/Plugin/Class.md>
+L<OO::Plugin::Manual|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.902/docs/md/OO/Plugin/Manual.md>,
+L<OO::Plugin::Manager|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.902/docs/md/OO/Plugin/Manager.md>,
+L<OO::Plugin::Class|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.902/docs/md/OO/Plugin/Class.md>
 
 =AUTHOR  Vadim Belman <vrurg@cpan.org>
 
