@@ -166,9 +166,10 @@ Similar to the above variant except that it takes named argument C<:plugin>.
 proto method normalize-name (|) {*}
 multi method normalize-name ( Str:D $plugin, Bool :$strict = True --> Str:D ) {
     return $plugin with %!mod-info{ $plugin }; # The name is already FQN
-    my @name = %!short2fqn{ $plugin }.keys;
+    my @name;
+    @name = .keys with %!short2fqn{ $plugin };
     unless @name {
-        return $plugin unless $strict;
+        return $plugin unless $strict and $.initialized;
         fail "No FQN for short plugin name '$plugin'; was it installed?";
     }
     fail "Short plugin name '$plugin' maps into more than one FQN" if @name.elems > 1;
@@ -413,7 +414,7 @@ multi method disable ( |params( Str:D $plugin, Str:D $reason ) ) {
     }
 }
 
-multi method disable ( Plugin \type, Str:D $reason --> Nil ) {
+multi method disable ( Plugin:U \type, Str:D $reason --> Nil ) {
     samewith( type.^name, $reason );
 }
 
