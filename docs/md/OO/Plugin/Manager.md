@@ -10,6 +10,8 @@ SYNOPSIS
                 .load-plugins
                 .initialize( plugin-parameter => $param-value );
 
+    my $plugged-object = $mgr.create( MyClass, class-param => "a value" );
+
 DESCRIPTION
 ===========
 
@@ -84,6 +86,8 @@ routine normalize-name
 
     Similar to the above variant except that it takes named argument `:plugin`.
 
+*Note* would always return the `$plugin` parameter before the plugin manager is initialized.
+
 routine short-name
 ------------------
 
@@ -150,7 +154,193 @@ Set plugins priority in the plugin order.
 
 See [`PlugPriority`](#enum-plugpriority)
 
-SEE Also
+routine get-priority
+--------------------
+
+Returns priority value for a given plugin.
+
+  * `get-priority( Str:D $plugin )`
+
+  * `get-priority( Str:D :$fqn )`
+
+    Faster version, avoids name normalization.
+
+See [`PlugPriority`](#enum-plugpriority)
+
+routine load-plugins
+--------------------
+
+Initiates automatic loading of plugin modules by traversing modules in repositories and search paths. Only the modules with names begining in prefix defined by [`base` attribute](#has-str-base) and followed by any of [`namespaces`](#has-positional-namespaces) will be loaded. For example:
+
+    my $mgr = OO::Plugin::Manager.new( base => 'MyApp' ).load-plugins;
+
+would auto-load all modules starting with *MyApp::Plugin::* or *MyApp::Plugins::*; whereas:
+
+    my $mgr = OO::Plugin::Manager.new( base => 'MyApp', namespaces => <Ext Extensions> ).load-plugins;
+
+would autoload *MyApp::Ext::* or *MyApp::Extensions::*.
+
+Returns the invocing `OO::Plugin::Manager` object, making chained method calls possible.
+
+If a module cannot be loaded due to a error the method appends a `Pair` of `$module-name => $error-text` to [`@.load-errors`](#has-positional-load-errors). When [`$.debug`](#has-bool-debug) is *True* the error text will include error's stack backtrace too.
+
+*Note* that modules are just loaded and no other work is done by this method.
+
+routine initialize
+------------------
+
+  * `initialize( |create-params )`
+
+Performs final initialization of the plugin manager object. This includes:
+
+  * iterating over all plugin classes and collecting their meta information and technical info
+
+  * rebuilding internal caches and structures to reflect the collected information
+
+  * order the plugins corresponding based on priorities, user-defined order, and dependencies
+
+  * create plugin objects
+
+After completion the plugin manager object is marked as *initialized* effictevly disabling some of its functionality which only makes sense until the initialization.
+
+The `create-params` parameter is passed to plugin object constructors at the creation stage. For example:
+
+    class MyApp {
+        has $.mgr;
+        submethod TWEAK {
+            $.mgr = OO::Plugin::Manager.new
+                        .load-plugins
+                        .initialize( app => self );
+        }
+    }
+
+would pass the application object to all loaded plugins. This would simplify the communication between a plugin and the user code.
+
+**NOTE** The second initialization stage includes building of mapping of short plugin names to FQN. Before this is done
+
+routine disable
+---------------
+
+Disables plugins.
+
+  * `disable( Str:D $plugin, Str:D $reason )`
+
+  * `disable( Plugin:U \type, Str:D $reason )`
+
+  * `disable( @plugins, Str:D $reason )`
+
+  * `disable( *@plugins, Str:D $reason )`
+
+A disabled plugin won't have its object created and will be excluded from any interaction with application code. For any disabled plugin there is a text reason explaining why it was disabled. For example, if a plugin has been found to participate in a demain cyclic dependecy then it will be disabled with *"Participated in a demand circle"* reason. The applicatiob code can later collect the reasons to display them back to the end-user.
+
+*Implementation note.* The method allows both short plugin names and FQN, as most other methods do. But the name normalization is not possible before the initialization is complete. To make it all even more fun, disabling is not possible _after_ the initialization! To resolve this collision, all calls to `disable` from the user code are only getting recorded by the framework. The recorded calls are then replayed at the initialization time. Because of this trick it is not possible to read disable reasons at early stages of the plugin manager life cycle.
+
+routine disabled
+----------------
+
+If plugin is disabled, a reason text is returned. Undefined value is returned otherwise.
+
+  * `disabled( Str:D $plugin )`
+
+  * `disabled( Str:D :$fqn )`
+
+    Faster version, not using name normalization
+
+  * `disabled( Plugin:U \type )`
+
+There is a parameter-less variant of the method:
+
+  * `disabled()`
+
+which would return a hash where keys are plugin FQNs and values are reasons.
+
+routine enabled
+---------------
+
+Opposite to [`disabled`](#routine-disabled) method. Returns _True_ if plugin is enabled. Supports all the same signatures as `disabled` does.
+
+routine order
+-------------
+
+Returns list of plugin names as they were ordered at the initialization time.
+
+routine plugin-objects
+----------------------
+
+Returns a ordered Seq plugin objects.
+
+See [`order`](#routine-order)
+
+routine callback
+----------------
+
+`callback( Str:D $callback-name, |callback-params )`
+
+Initiate a callback named `$callback-name`. Passes `callback-params` to plugins' callback handlers.
+
+Method returns what callback handler requested to return.
+
+Read more in [OO::Plugin::Manual](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.3/docs/md/OO/Plugin/Manual.md#callbacks).
+
+routine cb
+----------
+
+Shortcut for [`callback`](#routine-callback).
+
+routine event
+-------------
+
+`event( Str:D $event-name, |event-params )`
+
+Initiates an event named `$event-name` and passes `event-params` to all event handlers.
+
+Returns a `Promise` which will be kept upon this particular event is completely handled; i.e. when all event handlers are completed. The promise is resolved to an array of `Promise`s, one per each event handler been called.
+
+Read more in [OO::Plugin::Manual](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.3/docs/md/OO/Plugin/Manual.md#events).
+
+See also [`finish`](#routine-finish).
+
+routine has-plugin
+------------------
+
+`has-plugin( Str:D $plugin )`
+
+Returns true if plugin is registered with this manager
+
+method plugin-object
+--------------------
+
+  * `plugin-object( Str:D $plugin )`
+
+  * `plugin-object( Str:D :$fqn )`
+
+Retruns the requested plugin object if it exists. As always, the `:$fqn` version is slightly faster.
+
+routine all-enabled
+-------------------
+
+Returns unordered `Seq` of all enabled plugin names.
+
+routine class
+-------------
+
+`class( MyClass )`
+
+One of the two key methods of this class. For a given class it creates a newly generated one with all `plug-class`es and method handlers applied. All the magic this framework provides with regard to extending application classes functionality through delegating to the plugins is only possible after calling this method. Read more in [OO::Plugin::Manual](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.3/docs/md/OO/Plugin/Manual.md#basics).
+
+routine create
+--------------
+
+`create( MyClass, |constructor-params )`
+
+Creates a new instance for class `MyClass` with all the magic applied, as described for [method `class`](#class) and in [OO::Plugin::Manual](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.3/docs/md/OO/Plugin/Manual.md#basics). This method is what must be used in place of the standard `new`.
+
+routine finish
+--------------
+
+This is the plugin manager finalization method. It must always be called before application shutdown to ensure proper completion of all event handers possibly still running in the background.
+
+SEE ALSO
 ========
 
 [OO::Plugin::Manual](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.3/docs/md/OO/Plugin/Manual.md), [OO::Plugin](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.3/docs/md/OO/Plugin.md), [OO::Plugin::Class](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.3/docs/md/OO/Plugin/Class.md) [OO::Plugin::Registry](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.3/docs/md/OO/Plugin/Registry.md),
