@@ -1,49 +1,49 @@
 {
-  "version": "0.0.3",
-  "resources": [
-    
-  ],
-  "provides": {
-    "OO::Plugin::Declarations": "lib/OO/Plugin/Declarations.pm6",
-    "OO::Plugin::Exception": "lib/OO/Plugin/Exception.pm6",
-    "OO::Plugin::Metamodel::PluginHOW": "lib/OO/Plugin/Metamodel/PluginHOW.pm6",
-    "OO::Plugin::Manager": "lib/OO/Plugin/Manager.pm6",
-    "OO::Plugin::Registry": "lib/OO/Plugin/Registry.pm6",
-    "OO::Plugin": "lib/OO/Plugin.pm6",
-    "OO::Plugin::Metamodel::PlugRoleHOW": "lib/OO/Plugin/Metamodel/PlugRoleHOW.pm6",
-    "OO::Plugin::Class": "lib/OO/Plugin/Class.pm6"
+  "version": "0.0.4",
+  "support": {
+    "source": "https://github.com/vrurg/Perl6-OO-Plugin.git"
   },
+  "auth": "github:vrurg",
+  "perl": "6.d",
+  "authors": [
+    "Vadim Belman <vrurg@cpan.org>"
+  ],
   "test-depends": [
     "Test",
     "Test::META",
     "Test::When"
   ],
-  "production": true,
-  "authors": [
-    "Vadim Belman <vrurg@cpan.org>"
-  ],
-  "name": "OO::Plugin",
-  "auth": "github:vrurg",
-  "license": "Artistic-2.0",
   "meta-version": "0",
+  "source-url": "git://github.com/vrurg/Perl6-OO-Plugin.git",
+  "depends": [
+    "WhereList",
+    "File::Find"
+  ],
+  "build-depends": [
+    "META6",
+    "p6doc",
+    "Pod::To::Markdown"
+  ],
   "tags": [
     "OO",
     "Plugin",
     "Plugins"
   ],
-  "support": {
-    "source": "https://github.com/vrurg/Perl6-OO-Plugin.git"
-  },
-  "description": "Framework for working with OO application plugins",
-  "depends": [
-    "WhereList",
-    "File::Find"
+  "production": true,
+  "resources": [
+    
   ],
-  "source-url": "git://github.com/vrurg/Perl6-OO-Plugin.git",
-  "perl": "6.d",
-  "build-depends": [
-    "META6",
-    "p6doc",
-    "Pod::To::Markdown"
-  ]
+  "description": "Framework for working with OO application plugins",
+  "license": "Artistic-2.0",
+  "provides": {
+    "OO::Plugin::Exception": "lib/OO/Plugin/Exception.pm6",
+    "OO::Plugin::Registry": "lib/OO/Plugin/Registry.pm6",
+    "OO::Plugin::Metamodel::PlugRoleHOW": "lib/OO/Plugin/Metamodel/PlugRoleHOW.pm6",
+    "OO::Plugin": "lib/OO/Plugin.pm6",
+    "OO::Plugin::Class": "lib/OO/Plugin/Class.pm6",
+    "OO::Plugin::Metamodel::PluginHOW": "lib/OO/Plugin/Metamodel/PluginHOW.pm6",
+    "OO::Plugin::Manager": "lib/OO/Plugin/Manager.pm6",
+    "OO::Plugin::Declarations": "lib/OO/Plugin/Declarations.pm6"
+  },
+  "name": "OO::Plugin"
 }
