@@ -32,9 +32,9 @@ DOCS_SUBDIRS=$(shell find lib -type d -name '.*' -prune -o -type d -printf '%P\n
 MD_SUBDIRS:=$(addprefix $(MD_DIR)/,$(DOCS_SUBDIRS))
 HTML_SUBDIRS:=$(addprefix $(HTML_DIR)/,$(DOCS_SUBDIRS))
 PM_SRC=$(shell find lib -name '*.pm6' | xargs grep -l '^=begin')
-POD_SRC=$(shell find doc -name '*.pod6')
+POD_SRC=$(shell find doc -name '*.pod6' -and -not -name 'README.pod6')
 DOC_SRC=$(POD_SRC) $(PM_SRC)
-DOC_DEST=$(shell find lib doc \( -name '*.pm6' -o -name '*.pod6' \) | xargs grep -l '^=begin' | sed 's,^[^/]*/,,')
+DOC_DEST=$(shell find lib doc \( -name '*.pm6' -o \( -name '*.pod6' -and -not -name 'README.pod6' \) \) | xargs grep -l '^=begin' | sed 's,^[^/]*/,,')
 
 .SUFFXES: .md .pod6
 
@@ -44,7 +44,7 @@ vpath %.pod6 $(dir $(POD_SRC))
 #vpath %.html $(HTML_SUBDIRS)
 
 .PHONY: all html test author-test release-test is-repo-clean build depends release meta6_mod meta \
-		archive upload clean install doc md html docs_dirs doc_ver_patch
+		archive upload clean install doc md html docs_dirs doc_ver_patch version
 
 %.md $(addsuffix /%.md,$(MD_SUBDIRS)):: %.pm6
 	@echo "===> Generating" $@ "of" $<
@@ -66,15 +66,14 @@ all: release
 
 doc: docs_dirs doc_ver_patch md html
 
-docs_dirs: $(MD_SUBDIRS) $(HTML_SUBDIRS)
-	@mkdir -p $^
-
-doc_ver_patch:
-	@for src in $(DOC_SRC); do ./build-tools/patch-doc.p6 -r $$src; done
+docs_dirs: | $(MD_SUBDIRS) $(HTML_SUBDIRS)
 
 $(MD_SUBDIRS) $(HTML_SUBDIRS):
 	@echo "===> mkdir" $@
 	@mkdir -p $@
+
+doc_ver_patch:
+	@for src in $(DOC_SRC); do ./build-tools/patch-doc.p6 -r $$src; done
 
 md: ./README.md $(addprefix $(MD_DIR)/,$(patsubst %.pod6,%.md,$(patsubst %.pm6,%.md,$(DOC_DEST))))
 
@@ -100,6 +99,10 @@ build: depends doc
 depends: meta
 	@echo "===> Installing dependencies"
 	@zef --deps-only install .
+
+# doc is duplicated on purpose
+version: doc meta clean
+	@git add . && git commit -m 'Minor: version bump'
 
 release: build is-repo-clean release-test archive
 	@echo "===> Done releasing"
