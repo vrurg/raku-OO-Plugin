@@ -32,9 +32,9 @@ DOCS_SUBDIRS=$(shell find lib -type d -name '.*' -prune -o -type d -printf '%P\n
 MD_SUBDIRS:=$(addprefix $(MD_DIR)/,$(DOCS_SUBDIRS))
 HTML_SUBDIRS:=$(addprefix $(HTML_DIR)/,$(DOCS_SUBDIRS))
 PM_SRC=$(shell find lib -name '*.pm6' | xargs grep -l '^=begin')
-POD_SRC=$(shell find doc -name '*.pod6')
+POD_SRC=$(shell find doc -name '*.pod6' -and -not -name 'README.pod6')
 DOC_SRC=$(POD_SRC) $(PM_SRC)
-DOC_DEST=$(shell find lib doc \( -name '*.pm6' -o -name '*.pod6' \) | xargs grep -l '^=begin' | sed 's,^[^/]*/,,')
+DOC_DEST=$(shell find lib doc \( -name '*.pm6' -o \( -name '*.pod6' -and -not -name 'README.pod6' \) \) | xargs grep -l '^=begin' | sed 's,^[^/]*/,,')
 
 .SUFFXES: .md .pod6
 
@@ -101,7 +101,7 @@ depends: meta
 	@zef --deps-only install .
 
 # doc is duplicated on purpose
-version: doc doc meta clean
+version: doc meta clean
 	@git add . && git commit -m 'Minor: version bump'
 
 release: build is-repo-clean release-test archive
