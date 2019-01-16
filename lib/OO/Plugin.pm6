@@ -253,16 +253,10 @@ sub EXPORT {
 
 =head1 SEE ALSO
 
-<<<<<<< HEAD
-L<OO::Plugin::Manual|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.903/docs/md/OO/Plugin/Manual.md>,
-L<OO::Plugin::Manager|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.903/docs/md/OO/Plugin/Manager.md>,
-L<OO::Plugin::Class|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.903/docs/md/OO/Plugin/Class.md>
-=======
 L<OO::Plugin::Manual|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.903/docs/md/OO/Plugin/Manual.md>,
 L<OO::Plugin::Manager|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.903/docs/md/OO/Plugin/Manager.md>,
 L<OO::Plugin::Class|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.903/docs/md/OO/Plugin/Class.md>
 L<OO::Plugin::Registry|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.903/docs/md/OO/Plugin/Registry.md>
->>>>>>> v0.0
 
 =AUTHOR  Vadim Belman <vrurg@cpan.org>
 
