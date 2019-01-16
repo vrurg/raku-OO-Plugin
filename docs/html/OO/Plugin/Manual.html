@@ -31,8 +31,9 @@
  <tr class="toc-level-2"><td class="toc-number">3.1</td><td class="toc-text"><a href="#Basics">Basics</a></td></tr>
                              <tr class="toc-level-2"><td class="toc-number">3.2</td><td class="toc-text"><a href="#Pre-loading_Plugins_And_Naming.">Pre-loading Plugins And Naming.</a></td></tr>
                     <tr class="toc-level-2"><td class="toc-number">3.3</td><td class="toc-text"><a href="#Ordering_And_Priorities">Ordering And Priorities</a></td></tr>
-                                                                 <tr class="toc-level-3"><td class="toc-number">3.3.1</td><td class="toc-text"><a href="#Sorting">Sorting</a></td></tr>
-                                                <tr class="toc-level-3"><td class="toc-number">3.3.2</td><td class="toc-text"><a href="#How_Ordering_Is_Used?">How Ordering Is Used?</a></td></tr>
+                                             <tr class="toc-level-3"><td class="toc-number">3.3.1</td><td class="toc-text"><a href="#User_Defined_Ordering">User Defined Ordering</a></td></tr>
+                                     <tr class="toc-level-3"><td class="toc-number">3.3.2</td><td class="toc-text"><a href="#Sorting">Sorting</a></td></tr>
+                                                <tr class="toc-level-3"><td class="toc-number">3.3.3</td><td class="toc-text"><a href="#How_Ordering_Is_Used?">How Ordering Is Used?</a></td></tr>
   <tr class="toc-level-2"><td class="toc-number">3.4</td><td class="toc-text"><a href="#Writing_A_Plugin">Writing A Plugin</a></td></tr>
                       <tr class="toc-level-3"><td class="toc-number">3.4.1</td><td class="toc-text"><a href="#Method_Handling">Method Handling</a></td></tr>
                                          <tr class="toc-level-4"><td class="toc-number">3.4.1.1</td><td class="toc-text"><a href="#Method_Return_Value">Method Return Value</a></td></tr>
@@ -45,8 +46,13 @@
                    <tr class="toc-level-4"><td class="toc-number">3.4.4.1</td><td class="toc-text"><a href="#Nuances">Nuances</a></td></tr>
                 <tr class="toc-level-2"><td class="toc-number">3.5</td><td class="toc-text"><a href="#Plugin_META">Plugin META</a></td></tr>
                                                    <tr class="toc-level-2"><td class="toc-number">3.6</td><td class="toc-text"><a href="#Pluggables">Pluggables</a></td></tr>
-                <tr class="toc-level-1"><td class="toc-number">4</td><td class="toc-text"><a href="#SEE_ALSO">SEE ALSO</a></td></tr>
-     
+                  <tr class="toc-level-2"><td class="toc-number">3.7</td><td class="toc-text"><a href="#Traits">Traits</a></td></tr>
+  <tr class="toc-level-3"><td class="toc-number">3.7.1</td><td class="toc-text"><a href="#is_pluggable">is pluggable</a></td></tr>
+    <tr class="toc-level-3"><td class="toc-number">3.7.2</td><td class="toc-text"><a href="#is_plug-(before|around|after)">is plug-(before|around|after)</a></td></tr>
+                                       <tr class="toc-level-3"><td class="toc-number">3.7.3</td><td class="toc-text"><a href="#after,_before,_demand">after, before, demand</a></td></tr>
+            <tr class="toc-level-3"><td class="toc-number">3.7.4</td><td class="toc-text"><a href="#for">for</a></td></tr>
+            <tr class="toc-level-1"><td class="toc-number">4</td><td class="toc-text"><a href="#SEE_ALSO">SEE ALSO</a></td></tr>
+        
 </table>
 </nav>
 
@@ -124,13 +130,22 @@ plugin Plugin2 {
 </li>
 </ul>
 <p>Priorities could be of three different levels: <em>first</em>, <em>normal</em>, and <em>last</em>. Their names suggest that user wants a plugin to be one of the first in the list, one of the last, or in the middle. The latter is the default.</p>
-<p>Within each priority a user can define in what particular order he wants the plugins. For example, lets say we have plugins <em>P1</em>, <em>P2</em>, <em>P3</em>, and <em>P4</em> – all assigned with <em>first</em> priority. Additionally, the user specifies that he wants <em>P2</em> to go after <em>P3</em>. In this case the manager will attempt to arrange plugins in a way, that <em>P3</em> will go first, then followed by <em>P2</em>, then by <em>P1</em> and <em>P4</em> in no particular order. Then these four will be followed by plugins with lower priorities.</p>
-<p>To simplify user&#39;s life we don&#39;t want to make it his responsibility to find out if a <em>Plugin1</em> only works if it follows, say, <em>Plugin2</em>. The framework lets a plugin define these kinds of relations. More than that, it is also possible to specify wether the relation is desirable or it is demanded. Consider the followin code:</p>
+<p>Within each priority a user can define in what particular order he wants the plugins. See <a href="#user-defined-ordering">section</a> below.</p>
+<p>To simplify user&#39;s life we don&#39;t want to make it his responsibility to find out if a <em>Plugin1</em> only works if it follows, say, <em>Plugin2</em>. The framework lets plugins define these kind of relations. More than that, it is also possible to specify wether the relation is desirable or it is demanded. Consider the following code:</p>
 <pre class="pod-block-code">plugin Plugin1 after Plugin2 before Plugin3 demands Plugin4, Plugin5 {
     ...
 }</pre>
-<p>Though rather unlikely to be met in real life, this code demonstrates what can be specified for a plugin. Here traits <code>after</code> and <code>before</code> (<strong>note</strong> that <code>before</code> is just a reverse of <code>after</code>. I.e. <code>Plugin1 before Plugin2</code> is the same as <code>Plugin2 after Plugin1</code>) define desirable relations. In other words, no fatalities would happen if these relations are broken. By &#39;broken&#39; we mean that either <em>Plugin2</em> or <em>Plugin3</em> are missing; or together with <em>Plugin1</em> and, possibly with some other plugins too, they form a circular dependency (see below about sorting).</p>
+<p>Though rather unlikely to be met in real life, this code demonstrates what can be specified for a plugin. Here traits <code>after</code> and <code>before</code> (<strong>note</strong> that <code>before</code> is just a reverse of <code>after</code>. I.e. <code>Plugin1 before Plugin2</code> is the same as <code>Plugin2 after Plugin1</code>) define desirable relations. In other words, no fatalities would happen if these relations are broken. &#39;Broken&#39; means here that either <em>Plugin2</em> or <em>Plugin3</em> are missing; or together with <em>Plugin1</em> and, possibly with some other plugins too, they form a circular dependency (see below about sorting).</p>
 <p>On the other hand, <code>demand</code> means that if it can&#39;t be fulfilled then the only way to resolve the situation is to disable this plugin.</p>
+<h3 id="User_Defined_Ordering"><a class="u" href="#___top" title="go to top of document">User Defined Ordering</a></h3>
+<p>It is possible for a user to specifically set the wanted order of plugins within each priority. E.g., for a set of plugins <em>P1, P2, P3, P4, P5, P6, P7, P8, P9, P10</em> a user can specify that:</p>
+<ul><li><p><em>P7</em>, <em>P3</em>, <em>P5</em> must go <em>first</em> and preserve the order specified; i.e. <em>P5</em> must go after <em>P3</em>, and <em>P3</em> must go after <em>P7</em>.</p>
+</li>
+<li><p><em>P4</em>, <em>P1</em>, <em>P8</em> must got <em>last</em> and preserve the orider specified.</p>
+</li>
+</ul>
+<p>For user-ordered plugins there is a rule that they will go first within their priority if they belong to <em>first</em> or <em>normal</em>; and they will go after unordered ones within <em>last</em>.</p>
+<p><strong>NOTE</strong> Read the followin section carefully as the resulting order might differ from user expectations.</p>
 <h3 id="Sorting"><a class="u" href="#___top" title="go to top of document">Sorting</a></h3>
 <p>The manager will do its best to conform all the ordering parameters. But due to the complexity of the matter the only rule which can be taken for granted is:</p>
 <ul><li><p><em>a demanded plugin will preceed the one which demands it</em></p>
@@ -162,7 +177,7 @@ D, C, B, A</pre>
 <h3 id="How_Ordering_Is_Used?"><a class="u" href="#___top" title="go to top of document">How Ordering Is Used?</a></h3>
 <p>This will be covered in the section below.</p>
 <h2 id="Writing_A_Plugin"><a class="u" href="#___top" title="go to top of document">Writing A Plugin</a></h2>
-<p>A plugin is an instance of a class inheriting from a <code>Plugin</code> class defined in <a href="https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.902/docs/md/OO/Plugin/Class.md">OO::Plugin::Class</a> module. To reduce the boilerplate and provide better readability of the code special class declarator <code>plugin</code> is provided:</p>
+<p>A plugin is an instance of a class inheriting from a <code>Plugin</code> class defined in <a href="https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.4/docs/md/OO/Plugin/Class.md">OO::Plugin::Class</a> module. To reduce the boilerplate and provide better readability of the code special class declarator <code>plugin</code> is provided:</p>
 <pre class="pod-block-code">plugin MyPlugin {
     ...
 }</pre>
@@ -402,11 +417,46 @@ class Bar {
         ...
     }
 }</pre>
-<p>The outcome of applying the trait differs depending on wether the plugin manager is in <em>strict</em> or <em>loose</em> mode. In the former it will raise an error for any attempt to override an unpluggable class or attach a handler to an unpluggable method. In the latter (which is the default) any class or method are considered pluggable.</p>
-<p>A user can request a registry of pluggables from <a href="https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.902/docs/md/OO/Plugin/Registry.md">OO::Plugin::Registry</a>. This information can be used, for example, to provide a plugin developer with the information about what objects are opened for &quot;suggestions&quot;.</p>
+<p>The outcome of applying the trait differs depending on wether the plugin manager is in <em>strict</em> or <em>loose</em> mode. In the former case it will raise an error for any attempt to override an unpluggable class or attach a handler to an unpluggable method. In the latter case (which is the default) any class or method is considered pluggable and gets registed as such with <a href="https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.4/docs/md/OO/Plugin/Registry.md">OO::Plugin::Registry</a>.</p>
+<p>A user can request a registry of pluggables from <a href="https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.4/docs/md/OO/Plugin/Registry.md#method-pluggable-classes">OO::Plugin::Registry</a>. This information can be used, for example, to provide a plugin developer with the information about what objects are opened for &quot;suggestions&quot;.</p>
 <p>Note though that in <em>loose</em> mode the manager will register any class or method requested by a plugin as pluggable. This functionality is considered experimental and might be a subject for change in the future.</p>
+<h2 id="Traits"><a class="u" href="#___top" title="go to top of document">Traits</a></h2>
+<p>The framework provides a couple of traits. They were mostly noted in this manual, but it worth listing them all together in this section.</p>
+<h3 id="is_pluggable"><a class="u" href="#___top" title="go to top of document">is pluggable</a></h3>
+<p>The most simple trait simply marking a class or a method as allowed for plugging. It is described in section <a href="#pluggables">Pluggables</a>.</p>
+<h3 id="is_plug-(before|around|after)"><a class="u" href="#___top" title="go to top of document">is plug-(before|around|after)</a></h3>
+<p>These three traits must be applied to plugin methods implementing method handling. They define what stage of the method call to install the handler into. Their parameters define what method of what class is to be handled. There&#39;re two forms allowed for the parameters: <code>List</code> and <code>Hash</code>.</p>
+<p>In the list form each element of the list could either be a <code>Pair</code> or a string. When it&#39;s a pair then the key is a class name and the value is a method name. The method name, in turn, could be just an asterisk <em>&#39;*&#39;</em> to specify all public methods of the class:</p>
+<pre class="pod-block-code">plugin Plugin1 {
+    method around-foo ( ... ) is plug-around( :Foo&lt;foo&gt; ) {
+        ...
+    }
+    method monitor ( |params ) is plug-before( Foo =&gt; &#39;*&#39;, &#39;Bar&#39;, &lt;Baz Fubar&gt; ) {
+        ...
+    }
+}</pre>
+<p><em>Note</em> Despite all over this manual I use <em>(before|around|after)-</em> prefix for method handlers, it&#39;s has nothing to do with the framework requirements. The method handler name is absolutely irrelevant and can be anything allowed by Perl6.</p>
+<p>The <code>monitor</code> handler will be called before all methods of <code>Foo</code>, <code>Bar</code>, <code>Baz</code>, and <code>Fubar</code> classes. Whereas <code>around-foo</code> will only handle method <code>foo</code> of <code>Foo</code>, pardon for this pub.</p>
+<p>When the trait parameter is a hash the it must have two keys: <em>class</em> and <em>method</em>:</p>
+<pre class="pod-block-code">plugin Plugin1 {
+    method monitor ( |params ) is plug-before{ class =&gt; &#39;Foo&#39;, method =&gt; &#39;*&#39; } {
+        ...
+    }
+}</pre>
+<h3 id="after,_before,_demand"><a class="u" href="#___top" title="go to top of document">after, before, demand</a></h3>
+<p>These three are pseudo-traits in a way that they don&#39;t have a representation via the <code>trait_mod</code> routine. They can only be used with a plugin class declared with <code>plugin</code> keyword. Their meaning is mostly outlined in <code>Ordering And Priorities|#ordering-and-priorities</code> section of this manual. Their syntax is extremely simple: they all take a list of plugin names in unquoted form. Note that it is not plugin classes we&#39;re talking about now because if a class is not available then this would be a syntax error. But the validity of these names is checked much later, at the plugin manager initialization stage. And even then only the absense of <em>demand</em>ed plugins is considered a problem.</p>
+<p>It is also worth noting that both short names and FQNs are accepted by the traits. Though the use of short names must be carefully considered because of their possible duplication.</p>
+<pre class="pod-block-code">plugin Plugin1 after MyApp::Plugins::Pugin2, Plugin5 before MyApp::Plugins::Plugin4 {
+    ...
+}</pre>
+<h3 id="for"><a class="u" href="#___top" title="go to top of document">for</a></h3>
+<p>This one is also a pseudo-trait in the same meaning, as the previously noted ordering traits. It can only be applied to a <code>plug-class</code>. Another similarity to the ordering traits is that <code>for</code> accepts list of unquoted names. Though this time it&#39;s a list of classes the related <code>plug-class</code> plans to extend. Short class names are allowed too but with the same precaution about possible duplicates.</p>
+<p><strong>NOTE</strong> Be very careful about mistypes in <code>for</code> declaration. There is no way to make sure that a missing class name is because it is wrongly spelled or because it wasn&#39;t requested by application code.</p>
 <h1 id="SEE_ALSO"><a class="u" href="#___top" title="go to top of document">SEE ALSO</a></h1>
-<p><a href="https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.902/docs/md/OO/Plugin.md">OO::Plugin</a>, <a href="https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.902/docs/md/OO/Plugin/Manager.md">OO::Plugin::Manager</a>, <a href="https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.902/docs/md/OO/Plugin/Class.md">OO::Plugin::Class</a></p>
+<p><a href="https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.4/docs/md/OO/Plugin.md">OO::Plugin</a>, <a href="https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.4/docs/md/OO/Plugin/Manager.md">OO::Plugin::Manager</a>, <a href="https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.4/docs/md/OO/Plugin/Class.md">OO::Plugin::Class</a> <a href="https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.4/docs/md/OO/Plugin/Registry.md">OO::Plugin::Registry</a></p>
+<section><h1>AUTHOR</h1>
+<p>Vadim Belman &lt;vrurg@cpan.org&gt;</p>
+</section>
 
     </div>
     

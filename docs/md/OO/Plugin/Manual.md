@@ -106,17 +106,29 @@ It is possible for a two more plugins to be handling same method, class, or call
 
 Priorities could be of three different levels: *first*, *normal*, and *last*. Their names suggest that user wants a plugin to be one of the first in the list, one of the last, or in the middle. The latter is the default.
 
-Within each priority a user can define in what particular order he wants the plugins. For example, lets say we have plugins *P1*, *P2*, *P3*, and *P4* – all assigned with *first* priority. Additionally, the user specifies that he wants *P2* to go after *P3*. In this case the manager will attempt to arrange plugins in a way, that *P3* will go first, then followed by *P2*, then by *P1* and *P4* in no particular order. Then these four will be followed by plugins with lower priorities.
+Within each priority a user can define in what particular order he wants the plugins. See [section](#user-defined-ordering) below.
 
-To simplify user's life we don't want to make it his responsibility to find out if a *Plugin1* only works if it follows, say, *Plugin2*. The framework lets a plugin define these kinds of relations. More than that, it is also possible to specify wether the relation is desirable or it is demanded. Consider the followin code:
+To simplify user's life we don't want to make it his responsibility to find out if a *Plugin1* only works if it follows, say, *Plugin2*. The framework lets plugins define these kind of relations. More than that, it is also possible to specify wether the relation is desirable or it is demanded. Consider the following code:
 
     plugin Plugin1 after Plugin2 before Plugin3 demands Plugin4, Plugin5 {
         ...
     }
 
-Though rather unlikely to be met in real life, this code demonstrates what can be specified for a plugin. Here traits `after` and `before` (**note** that `before` is just a reverse of `after`. I.e. `Plugin1 before Plugin2` is the same as `Plugin2 after Plugin1`) define desirable relations. In other words, no fatalities would happen if these relations are broken. By 'broken' we mean that either *Plugin2* or *Plugin3* are missing; or together with *Plugin1* and, possibly with some other plugins too, they form a circular dependency (see below about sorting).
+Though rather unlikely to be met in real life, this code demonstrates what can be specified for a plugin. Here traits `after` and `before` (**note** that `before` is just a reverse of `after`. I.e. `Plugin1 before Plugin2` is the same as `Plugin2 after Plugin1`) define desirable relations. In other words, no fatalities would happen if these relations are broken. 'Broken' means here that either *Plugin2* or *Plugin3* are missing; or together with *Plugin1* and, possibly with some other plugins too, they form a circular dependency (see below about sorting).
 
 On the other hand, `demand` means that if it can't be fulfilled then the only way to resolve the situation is to disable this plugin.
+
+### User Defined Ordering
+
+It is possible for a user to specifically set the wanted order of plugins within each priority. E.g., for a set of plugins *P1, P2, P3, P4, P5, P6, P7, P8, P9, P10* a user can specify that:
+
+  * *P7*, *P3*, *P5* must go *first* and preserve the order specified; i.e. *P5* must go after *P3*, and *P3* must go after *P7*.
+
+  * *P4*, *P1*, *P8* must got *last* and preserve the orider specified.
+
+For user-ordered plugins there is a rule that they will go first within their priority if they belong to *first* or *normal*; and they will go after unordered ones within *last*.
+
+**NOTE** Read the followin section carefully as the resulting order might differ from user expectations.
 
 ### Sorting
 
@@ -162,7 +174,7 @@ This will be covered in the section below.
 Writing A Plugin
 ----------------
 
-A plugin is an instance of a class inheriting from a `Plugin` class defined in [OO::Plugin::Class](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.902/docs/md/OO/Plugin/Class.md) module. To reduce the boilerplate and provide better readability of the code special class declarator `plugin` is provided:
+A plugin is an instance of a class inheriting from a `Plugin` class defined in [OO::Plugin::Class](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.4/docs/md/OO/Plugin/Class.md) module. To reduce the boilerplate and provide better readability of the code special class declarator `plugin` is provided:
 
     plugin MyPlugin {
         ...
@@ -493,14 +505,71 @@ The framework provides a special trait `is pluggable` which is applicable to bot
         }
     }
 
-The outcome of applying the trait differs depending on wether the plugin manager is in *strict* or *loose* mode. In the former it will raise an error for any attempt to override an unpluggable class or attach a handler to an unpluggable method. In the latter (which is the default) any class or method are considered pluggable.
+The outcome of applying the trait differs depending on wether the plugin manager is in *strict* or *loose* mode. In the former case it will raise an error for any attempt to override an unpluggable class or attach a handler to an unpluggable method. In the latter case (which is the default) any class or method is considered pluggable and gets registed as such with [OO::Plugin::Registry](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.4/docs/md/OO/Plugin/Registry.md).
 
-A user can request a registry of pluggables from [OO::Plugin::Registry](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.902/docs/md/OO/Plugin/Registry.md). This information can be used, for example, to provide a plugin developer with the information about what objects are opened for "suggestions".
+A user can request a registry of pluggables from [OO::Plugin::Registry](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.4/docs/md/OO/Plugin/Registry.md#method-pluggable-classes). This information can be used, for example, to provide a plugin developer with the information about what objects are opened for "suggestions".
 
 Note though that in *loose* mode the manager will register any class or method requested by a plugin as pluggable. This functionality is considered experimental and might be a subject for change in the future.
+
+Traits
+------
+
+The framework provides a couple of traits. They were mostly noted in this manual, but it worth listing them all together in this section.
+
+### is pluggable
+
+The most simple trait simply marking a class or a method as allowed for plugging. It is described in section [Pluggables](#pluggables).
+
+### is plug-(before|around|after)
+
+These three traits must be applied to plugin methods implementing method handling. They define what stage of the method call to install the handler into. Their parameters define what method of what class is to be handled. There're two forms allowed for the parameters: `List` and `Hash`.
+
+In the list form each element of the list could either be a `Pair` or a string. When it's a pair then the key is a class name and the value is a method name. The method name, in turn, could be just an asterisk *'*'* to specify all public methods of the class:
+
+    plugin Plugin1 {
+        method around-foo ( ... ) is plug-around( :Foo<foo> ) {
+            ...
+        }
+        method monitor ( |params ) is plug-before( Foo => '*', 'Bar', <Baz Fubar> ) {
+            ...
+        }
+    }
+
+*Note* Despite all over this manual I use *(before|around|after)-* prefix for method handlers, it's has nothing to do with the framework requirements. The method handler name is absolutely irrelevant and can be anything allowed by Perl6.
+
+The `monitor` handler will be called before all methods of `Foo`, `Bar`, `Baz`, and `Fubar` classes. Whereas `around-foo` will only handle method `foo` of `Foo`, pardon for this pub.
+
+When the trait parameter is a hash the it must have two keys: *class* and *method*:
+
+    plugin Plugin1 {
+        method monitor ( |params ) is plug-before{ class => 'Foo', method => '*' } {
+            ...
+        }
+    }
+
+### after, before, demand
+
+These three are pseudo-traits in a way that they don't have a representation via the `trait_mod` routine. They can only be used with a plugin class declared with `plugin` keyword. Their meaning is mostly outlined in `Ordering And Priorities|#ordering-and-priorities` section of this manual. Their syntax is extremely simple: they all take a list of plugin names in unquoted form. Note that it is not plugin classes we're talking about now because if a class is not available then this would be a syntax error. But the validity of these names is checked much later, at the plugin manager initialization stage. And even then only the absense of *demand*ed plugins is considered a problem.
+
+It is also worth noting that both short names and FQNs are accepted by the traits. Though the use of short names must be carefully considered because of their possible duplication.
+
+    plugin Plugin1 after MyApp::Plugins::Pugin2, Plugin5 before MyApp::Plugins::Plugin4 {
+        ...
+    }
+
+### for
+
+This one is also a pseudo-trait in the same meaning, as the previously noted ordering traits. It can only be applied to a `plug-class`. Another similarity to the ordering traits is that `for` accepts list of unquoted names. Though this time it's a list of classes the related `plug-class` plans to extend. Short class names are allowed too but with the same precaution about possible duplicates.
+
+**NOTE** Be very careful about mistypes in `for` declaration. There is no way to make sure that a missing class name is because it is wrongly spelled or because it wasn't requested by application code.
 
 SEE ALSO
 ========
 
-[OO::Plugin](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.902/docs/md/OO/Plugin.md), [OO::Plugin::Manager](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.902/docs/md/OO/Plugin/Manager.md), [OO::Plugin::Class](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.902/docs/md/OO/Plugin/Class.md)
+[OO::Plugin](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.4/docs/md/OO/Plugin.md), [OO::Plugin::Manager](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.4/docs/md/OO/Plugin/Manager.md), [OO::Plugin::Class](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.4/docs/md/OO/Plugin/Class.md) [OO::Plugin::Registry](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.4/docs/md/OO/Plugin/Registry.md)
+
+AUTHOR
+======
+
+Vadim Belman <vrurg@cpan.org>
 

@@ -6,6 +6,7 @@ class OO::Plugin::Metamodel::PlugRoleHOW is Metamodel::ParametricRoleHOW {
     has $!oo-plugin;
 
     method new_type ( :$name, |params ) {
+        die "missing 'for' declaration for plug-class $name" unless @*PLUG-CLASS-EXTENDING;
         my $type := self.Metamodel::ParametricRoleHOW::new_type( :$name, |params );
         Plugin::Registry.instance.register-plug( $type, @*PLUG-CLASS-EXTENDING );
         $type

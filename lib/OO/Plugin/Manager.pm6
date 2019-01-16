@@ -18,9 +18,11 @@ OO::Plugin::Manager - the conductor for a plugin orchestra.
                 .load-plugins
                 .initialize( plugin-parameter => $param-value );
 
+    my $plugged-object = $mgr.create( MyClass, class-param => "a value" );
+
 =head1 DESCRIPTION
 
-Most of the description for the functionality of this module can be found in L<OO::Plugin::Manual|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.902/docs/md/OO/Plugin/Manual.md>. Here we just cover
+Most of the description for the functionality of this module can be found in L<OO::Plugin::Manual|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.4/docs/md/OO/Plugin/Manual.md>. Here we just cover
 the technical details and attributes/methods.
 
 =head1 TYPES
@@ -33,8 +35,8 @@ Constants defining where the user whants to have a particular plugin:
 =item C<plugNormal> – in the middle of the list
 =item C<plugLast> – in the end of the list
 
-Read about L<sorting|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.902/docs/md/OO/Plugin/Manual.md#sorting> in
-L<OO::Plugin::Manual|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.902/docs/md/OO/Plugin/Manual.md>.
+Read about L<sorting|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.4/docs/md/OO/Plugin/Manual.md#sorting> in
+L<OO::Plugin::Manual|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.4/docs/md/OO/Plugin/Manual.md>.
 
 =end pod
 
@@ -142,7 +144,7 @@ submethod TWEAK (|) {
 }
 
 =begin pod
-=head2 routine normalize-name
+=head2 method normalize-name
 =begin item
 C<normalize-name( Str:D $plugin, Bool :$strict = True )>
 
@@ -156,6 +158,8 @@ C<normalize-name( Str:D :$plugin, Bool :$strict = True )>
 
 Similar to the above variant except that it takes named argument C<:plugin>.
 =end item
+
+I<Note> would always return the C<$plugin> parameter before the plugin manager is initialized.
 =end pod
 
 # Due to a slight chance of using more than one plugin manager within same process we can't rely on registry's name
@@ -166,9 +170,10 @@ Similar to the above variant except that it takes named argument C<:plugin>.
 proto method normalize-name (|) {*}
 multi method normalize-name ( Str:D $plugin, Bool :$strict = True --> Str:D ) {
     return $plugin with %!mod-info{ $plugin }; # The name is already FQN
-    my @name = %!short2fqn{ $plugin }.keys;
+    my @name;
+    @name = .keys with %!short2fqn{ $plugin };
     unless @name {
-        return $plugin unless $strict;
+        return $plugin unless $strict and $.initialized;
         fail "No FQN for short plugin name '$plugin'; was it installed?";
     }
     fail "Short plugin name '$plugin' maps into more than one FQN" if @name.elems > 1;
@@ -179,13 +184,11 @@ multi method normalize-name ( Str:D :$plugin!, Bool :$strict = True --> Str:D ) 
 }
 
 =begin pod
-=head2 routine short-name
+=head2 method short-name
 
 Takes a plugin name and returns its corresponding short name.
 
-=begin item
-C<short-name( Str:D $name )>
-=end item
+=item C<short-name( Str:D $name )>
 
 =begin item
 C<short-name( Str:D :$fqn )>
@@ -213,7 +216,7 @@ multi method short-name ( Plugin:U \ptype ) {
 }
 
 =begin pod
-=head2 routine meta
+=head2 method meta
 
 Returns plugin's META C<Hash>.
 
@@ -232,6 +235,34 @@ multi method meta ( Str:D :$fqn! --> Hash ) {
     $!registry.plugin-meta( :$fqn )
 }
 
+=begin pod
+=head2 method info
+
+C<info( Str:D $plugin )>
+
+Returns a copy of information hash on a plugin. The hash contains the following keys:
+
+=begin item
+C<priority>
+
+Priority (see L<C<PlugPriority>|#enum-plugpriority>)
+=end item
+=begin item
+C<shortname>
+
+Plugin's short name
+=end item
+=begin item
+C<type>
+
+Type (class) object of the plugin
+=end item
+=begin item
+C<version>
+
+Version (C<Version> object)
+=end item
+=end pod
 method info ( Str:D $plugin --> Hash ) {
     my $fqn = self.normalize-name( $plugin );
     # $fqn would contain Failure if the name cannot be normalized.
@@ -240,6 +271,26 @@ method info ( Str:D $plugin --> Hash ) {
     %!mod-info{ $fqn }.clone
 }
 
+=begin pod
+=head2 method set-priority
+
+Set plugins priority in the plugin order.
+
+=begin item
+C<set-priority( @plugins, PlugPriority:D :$priority, :$with-order? )>
+
+C<set-priority( *@plugins, PlugPriority:D :$priority, :$with-order? )>
+
+The most comprehensive version of the method. Allow not only setting of the priority for a bulk of the plugins but also
+to define their order within the specified priority when C<:with-order> is used.
+
+I<Note> that each new call of this method with C<:with-order> adverb will override previously set order for the
+specified priority.
+=end item
+=item C<set-priority( $plugin, PlugPriority:D :$priority )>
+
+See L<C<PlugPriority>|#enum-plugpriority>
+=end pod
 proto method set-priority (|) {*}
 
 # If :with-order is set then the order of plugins in the array is preserved for the corresponding priority.
@@ -257,7 +308,7 @@ multi method set-priority ( |params( @plugins, PlugPriority:D $priority, :$with-
     }
 }
 
-multi method set-priority ( @plugins, PlugPriority:D :$priority!, :$with-order? ) {
+multi method set-priority ( @plugins, PlugPriority:D :$priority = plugNormal, :$with-order? ) {
     samewith( @plugins, $priority, :$with-order )
 }
 
@@ -269,6 +320,21 @@ multi method set-priority ( *@plugins where { $_.all ~~ Str:D }, PlugPriority:D 
     samewith( @plugins, $priority )
 }
 
+=begin pod
+=head2 method get-priority
+
+Returns priority value for a given plugin.
+
+=item C<get-priority( Str:D $plugin )>
+=begin item
+C<get-priority( Str:D :$fqn )>
+
+Faster version, avoids name normalization.
+=end item
+
+See L<C<PlugPriority>|#enum-plugpriority>
+=end pod
+
 proto method get-priority (|) {*}
 multi method get-priority ( Str:D $plugin --> PlugPriority:D ) {
     %!mod-info{ self.normalize-name( $plugin ) }<priority>
@@ -277,6 +343,30 @@ multi method get-priority ( Str:D $plugin --> PlugPriority:D ) {
 multi method get-priority ( Str:D :$fqn! --> PlugPriority:D ) {
     %!mod-info{ $fqn }<priority>
 }
+
+=begin pod
+=head2 method load-plugins
+
+Initiates automatic loading of plugin modules by traversing modules in repositories and search paths. Only the modules
+with names begining in prefix defined by L<C<base> attribute|#has-str-base> and followed by any of
+L<C<namespaces>|#has-positional-namespaces> will be loaded. For example:
+
+    my $mgr = OO::Plugin::Manager.new( base => 'MyApp' ).load-plugins;
+
+would auto-load all modules starting with I<MyApp::Plugin::> or I<MyApp::Plugins::>; whereas:
+
+    my $mgr = OO::Plugin::Manager.new( base => 'MyApp', namespaces => <Ext Extensions> ).load-plugins;
+
+would autoload I<MyApp::Ext::> or I<MyApp::Extensions::>.
+
+Returns the invocing C<OO::Plugin::Manager> object, making chained method calls possible.
+
+If a module cannot be loaded due to a error the method appends a C<Pair> of C<<$module-name => $error-text>> to
+L<C<@.load-errors>|#has-positional-load-errors>. When L<C<$.debug>|#has-bool-debug> is I<True> the error text will
+include error's stack backtrace too.
+
+I<Note> that modules are just loaded and no other work is done by this method.
+=end pod
 
 method load-plugins ( --> ::?CLASS:D ) {
     my @mods = self!find-modules;
@@ -294,6 +384,37 @@ method load-plugins ( --> ::?CLASS:D ) {
     self!dbg: "Loaded plugins";
     self
 }
+
+=begin pod
+=head2 method initialize
+=item C<initialize( |create-params )>
+
+Performs final initialization of the plugin manager object. This includes:
+
+=item iterating over all plugin classes and collecting their meta information and technical info
+=item rebuilding internal caches and structures to reflect the collected information
+=item order the plugins corresponding based on priorities, user-defined order, and dependencies
+=item create plugin objects
+
+After completion the plugin manager object is marked as I<initialized> effictevly disabling some of its functionality
+which  only makes sense until the initialization.
+
+The C<create-params> parameter is passed to plugin object constructors at the creation stage. For example:
+
+    class MyApp {
+        has $.mgr;
+        submethod TWEAK {
+            $.mgr = OO::Plugin::Manager.new
+                        .load-plugins
+                        .initialize( app => self );
+        }
+    }
+
+would pass the application object to all loaded plugins. This would simplify the communication between a plugin and the
+user code.
+
+B<NOTE> The second initialization stage includes building of mapping of short plugin names to FQN. Before this is done
+=end pod
 
 method initialize ( |c-params --> ::?CLASS:D ) {
     die "Can't re-initialize" if $!initialized;
@@ -318,7 +439,8 @@ method initialize ( |c-params --> ::?CLASS:D ) {
 
         my %mod-meta = self.meta( $fqn );
 
-        %!mod-info{ $fqn }<version> = %mod-meta<version> // $_ with type.^ver;
+        # TODO: Make sure the version is defined for the plugin.
+        %!mod-info{ $fqn }<version> = %mod-meta<version> // $_ given type.^ver;
         %!mod-info{ $fqn }<shortname> = %mod-meta<name> // $shortname;
         %!mod-info{ $fqn }<priority> //= plugNormal;
         %!mod-info{ $fqn }<type> = type;
@@ -344,6 +466,28 @@ method initialize ( |c-params --> ::?CLASS:D ) {
     self
 }
 
+=begin pod
+=head2 method disable
+
+Disables plugins.
+
+=item C<disable( Str:D $plugin, Str:D $reason )>
+=item C<disable( Plugin:U \type, Str:D $reason )>
+=item C<disable( @plugins, Str:D $reason )>
+=item C<disable( *@plugins, Str:D $reason )>
+
+A disabled plugin won't have its object created and will be excluded from any interaction with application code. For any
+disabled plugin there is a text reason explaining why it was disabled. For example, if a plugin has been found to
+participate in a demain cyclic dependecy then it will be disabled with I<"Participated in a demand circle"> reason. The
+applicatiob code can later collect the reasons to display them back to the end-user.
+
+I<Implementation note.> The method allows both short plugin names and FQN, as most other methods do. But the name
+normalization is not possible before the initialization is complete. To make it all even more fun, disabling is not
+possible U<after> the initialization! To resolve this collision, all calls to C<disable> from the user code are only
+getting recorded by the framework. The recorded calls are then replayed at the initialization time. Because of this
+trick it is not possible to read disable reasons at early stages of the plugin manager life cycle.
+=end pod
+
 proto method disable (|) {*}
 
 multi method disable ( |params( Str:D $plugin, Str:D $reason ) ) {
@@ -365,7 +509,7 @@ multi method disable ( |params( Str:D $plugin, Str:D $reason ) ) {
     }
 }
 
-multi method disable ( Plugin \type, Str:D $reason --> Nil ) {
+multi method disable ( Plugin:U \type, Str:D $reason --> Nil ) {
     samewith( type.^name, $reason );
 }
 
@@ -378,6 +522,26 @@ multi method disable ( @plugins, Str:D $reason ) {
 multi method disable ( *@plugins, Str:D :$reason ) {
     samewith( @plugins, $reason )
 }
+
+=begin pod
+=head2 method disabled
+
+If plugin is disabled, a reason text is returned. Undefined value is returned otherwise.
+
+=item C<disabled( Str:D $plugin )>
+=begin item
+C<disabled( Str:D :$fqn )>
+
+Faster version, not using name normalization
+=end item
+=item C<disabled( Plugin:U \type )>
+
+There is a parameter-less variant of the method:
+
+=item C<disabled()>
+
+which would return a hash where keys are plugin FQNs and values are reasons.
+=end pod
 
 proto method disabled (|) {*}
 multi method disabled ( Str:D $name ) {
@@ -393,9 +557,48 @@ multi method disabled () {
     %!disabled.clone;
 }
 
-method enabled (|c) {
+=begin pod
+=head2 method enabled
+
+Opposite to L<C<disabled>|#routine-disabled> method. Returns _True_ if plugin is enabled. Supports all the same
+signatures as C<disabled> does.
+=end pod
+
+method enabled (|c --> Bool) {
     ! self.disabled(|c)
 }
+
+=begin pod
+=head2 method order
+
+Returns list of plugin names as they were ordered at the initialization time.
+=end pod
+
+method order { @!order.clone }
+
+=begin pod
+=head2 method plugin-objects
+
+Returns a ordered Seq plugin objects.
+
+See L<C<order>|#routine-order>
+=end pod
+method plugin-objects {
+    @!order.map: { %!objects{ $_ } }
+}
+
+=begin pod
+=head2 method callback
+
+C<callback( Str:D $callback-name, |callback-params )>
+
+Initiate a callback named C<$callback-name>. Passes C<callback-params> to plugins' callback handlers.
+
+Method returns what callback handler requested to return.
+
+Read more in
+L<OO::Plugin::Manual|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.4/docs/md/OO/Plugin/Manual.md#callbacks>.
+=end pod
 
 method callback( Str:D $cb-name where ? *, |params ) {
     my PluginMessage $msg .= new: params => params;
@@ -443,8 +646,29 @@ method callback( Str:D $cb-name where ? *, |params ) {
     return $msg.rc;
 }
 
+=begin pod
+=head2 method cb
+
+Shortcut for L<C<callback>|#routine-callback>.
+=end pod
+
 method cb (|c) { self.callback( |c ) }
 
+=begin pod
+=head2 method event
+
+C<event( Str:D $event-name, |event-params )>
+
+Initiates an event named C<$event-name> and passes C<event-params> to all event handlers.
+
+Returns a C<Promise> which will be kept upon this particular event is completely handled; i.e. when all event handlers
+are completed. The promise is resolved to an array of C<Promise>s, one per each event handler been called.
+
+Read more in
+L<OO::Plugin::Manual|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.4/docs/md/OO/Plugin/Manual.md#events>.
+
+See also L<C<finish>|#routine-finish>.
+=end pod
 method event ( Str:D $name where { .chars > 0 }, |params ) {
     $!ev-dispatch-lock.protect: {
         unless $!event-queue {
@@ -473,18 +697,26 @@ method event ( Str:D $name where { .chars > 0 }, |params ) {
     $complete
 }
 
-method order { @!order.clone }
+=begin pod
+=head2 method has-plugin
 
-# Returns true if plugin is registered with this manager
+C<has-plugin( Str:D $plugin )>
+
+Returns true if plugin is registered with this manager
+=end pod
 method has-plugin ( Str:D $plugin --> Bool ) {
     %!mod-info{ $plugin }:exists
         or ( %!short2fqn{ $plugin }:exists and %!short2fqn{ $plugin }.elems > 0 )
 }
 
-# Returns a Seq of ordered plugin objects
-method plugin-objects {
-    @!order.map: { %!objects{ $_ } }
-}
+=begin pod
+=head2 method plugin-object
+
+=item C<plugin-object( Str:D $plugin )>
+=item C<plugin-object( Str:D :$fqn )>
+
+Retruns the requested plugin object if it exists. As always, the C<:$fqn> version is slightly faster.
+=end pod
 
 proto method plugin-object (|) {*}
 multi method plugin-object ( Str:D $name ) {
@@ -494,10 +726,26 @@ multi method plugin-object( Str:D :$fqn ) {
     %!objects{ $fqn }
 }
 
+=begin pod
+=head2 method all-enabled
+
+Returns unordered C<Seq> of all enabled plugin FQNs.
+=end pod
 # Return all enabled plugins
 method all-enabled ( --> Seq:D ) {
     %!mod-info.keys.grep: { self.enabled( fqn => $_ ) }
 }
+
+=begin pod
+=head2 method class
+
+C<class( MyClass )>
+
+One of the two key methods of this class. For a given class it creates a newly generated one with all C<plug-class>es
+and method handlers applied. All the magic this framework provides with regard to extending application classes
+functionality through delegating to the plugins is only possible after calling this method. Read more in
+L<OO::Plugin::Manual|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.4/docs/md/OO/Plugin/Manual.md#basics>.
+=end pod
 
 method class ( Any:U \type --> Any:U ) {
 
@@ -517,10 +765,27 @@ method class ( Any:U \type --> Any:U ) {
     %!cached<types>{ type.^name } = $plug-class;
 }
 
+=begin pod
+=head2 method create
+
+C<create( MyClass, |constructor-params )>
+
+Creates a new instance for class C<MyClass> with all the magic applied, as described for L<method C<class>|#class> and
+in L<OO::Plugin::Manual|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.4/docs/md/OO/Plugin/Manual.md#basics>. This
+method is what must be used in place of the standard C<new>.
+=end pod
+
 method create ( Any:U \type, |params ) {
     my \wrapped-class = self.class( type );
     wrapped-class.new( |params )
 }
+
+=begin pod
+=head2 method finish
+
+This is the plugin manager finalization method. It must always be called before application shutdown to ensure proper
+completion of all event handers possibly still running in the background.
+=end pod
 
 method finish {
     # First, let the event loop complete.
@@ -1127,12 +1392,12 @@ method !dbg (*@msg) {
 
 =begin pod
 
-=head1 SEE Also
+=head1 SEE ALSO
 
-L<OO::Plugin::Manual|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.902/docs/md/OO/Plugin/Manual.md>,
-L<OO::Plugin|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.902/docs/md/OO/Plugin.md>,
-L<OO::Plugin::Class|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.902/docs/md/OO/Plugin/Class.md>
-L<OO::Plugin::Registry|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.902/docs/md/OO/Plugin/Registry.md>,
+L<OO::Plugin::Manual|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.4/docs/md/OO/Plugin/Manual.md>,
+L<OO::Plugin|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.4/docs/md/OO/Plugin.md>,
+L<OO::Plugin::Class|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.4/docs/md/OO/Plugin/Class.md>
+L<OO::Plugin::Registry|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.4/docs/md/OO/Plugin/Registry.md>,
 
 =AUTHOR  Vadim Belman <vrurg@cpan.org>
 
