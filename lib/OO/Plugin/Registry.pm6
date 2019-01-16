@@ -68,7 +68,7 @@ class Plugin::Registry is export {
     multi method plugin-meta ( Str:D :$fqn! --> Hash:D ) {
         self!deep-clone( %!registry<meta>{ $fqn } // {} )
     }
-    multi method plugin-meta ( Plugin:U $plugin ) { samewith( $plugin.^name ) }
+    multi method plugin-meta ( Plugin:U $plugin ) { samewith( fqn => $plugin.^name ) }
 
     proto method register-pluggable (|) {*}
     multi method register-pluggable ( Method:D $method ) {
@@ -125,7 +125,7 @@ class Plugin::Registry is export {
         # note "$plug-name extends {@extending}";
         given %!registry<plug-classes>{ $*CURRENT-PLUGIN-CLASS.^name }{ $plug-name } {
             $_<type> = plug-class;
-            $_<extends> = ($_<extends> // SetHash.new) ∪ @extending.map( { self.fqn-class-name: $_ } );
+            $_<extends> ∪= @extending.map( { self.fqn-class-name: $_ } );
         }
         # note "!!! PLUG CLASSES: ", %!registry<plug-classes>;
         %!registry<extended-classes>:delete; # Must be rebuild later
@@ -140,7 +140,7 @@ class Plugin::Registry is export {
 
     # Record manager-generated classes
     method register-autogen-class ( Str:D $class ) {
-        %!registry<inventory><autogen-classs>{ $class } = True;
+        %!registry<inventory><autogen-classs> ∪= $class;
     }
 
     method pluggable-classes ( --> List ) {
@@ -163,25 +163,37 @@ class Plugin::Registry is export {
     }
 
     proto method short2fqn (|) {*}
-    multi method short2fqn ( Str:D $what, Str:D $name --> Str:D ) {
+    multi method short2fqn ( Str:D $what where * ~~ 'classes' | 'plugins', Str:D $name --> Str:D ) {
         self!build-name-map;
         %!registry<name-map>{ $what }<short2fqn>{ $name } // $name
     }
-    multi method short2fqn ( *%what where *.keys.elems == 1 --> Str:D ) {
-        for %what.kv -> $what, $name {
-            return samewith( $what, $name );
-        }
+    multi method short2fqn ( Str:D :$plugin --> Str:D ) {
+        samewith( 'plugins', $plugin );
     }
+    multi method short2fqn ( Str:D :$class --> Str:D ) {
+        samewith( 'classes', $class );
+    }
+    # multi method short2fqn ( *%what where *.keys.elems == 1 --> Str:D ) {
+    #     for %what.kv -> $what, $name {
+    #         return samewith( $what, $name );
+    #     }
+    # }
 
     proto method fqn2short (|) {*}
-    multi method fqn2short( Str:D $what, Str:D $name ) {
+    multi method fqn2short( Str:D $what, Str:D $name --> Str:D ) {
         self!build-name-map;
         %!registry<name-map>{ $what }<fqn2short>{ $name } // $name
     }
-    multi method fqn2short( *%what ) {
-        for %what.kv -> $what, $name {
-            samewith( $what, $name );
-        }
+    # multi method fqn2short( *%what where *.keys.elems == 1 --> Str:D ) {
+    #     for %what.kv -> $what, $name {
+    #         samewith( $what, $name );
+    #     }
+    # }
+    multi method fqn2short ( Str:D :$plugin --> Str:D ) {
+        samewith( 'plugins', $plugin )
+    }
+    multi method fqn2short ( Str:D :$class --> Str:D ) {
+        samewith( 'classes', $class )
     }
 
     method fqn-class-name ( Str:D $name ) {
@@ -193,7 +205,7 @@ class Plugin::Registry is export {
     }
 
     method has-autogen-class ( Str:D $class --> Bool ) {
-        ? %!registry<inventory>{ $class }
+        ? %!registry<inventory><autogen-class>{ $class }
     }
 
     method !deep-clone ( $element ) {
