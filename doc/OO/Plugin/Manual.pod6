@@ -130,8 +130,8 @@ Within each priority a user can define in what particular order he wants the plu
 L<section|#user-defined-ordering> below.
 
 To simplify user's life we don't want to make it his responsibility to find out if a I<Plugin1> only works if it
-follows, say, I<Plugin2>. The framework lets plugins define these kinds of relations. More than that, it is also
-possible to specify wether the relation is desirable or it is demanded. Consider the followin code:
+follows, say, I<Plugin2>. The framework lets plugins define these kind of relations. More than that, it is also possible
+to specify wether the relation is desirable or it is demanded. Consider the following code:
 
     plugin Plugin1 after Plugin2 before Plugin3 demands Plugin4, Plugin5 {
         ...
@@ -140,7 +140,7 @@ possible to specify wether the relation is desirable or it is demanded. Consider
 Though rather unlikely to be met in real life, this code demonstrates what can be specified for a plugin. Here traits
 C<after> and C<before> (B<note> that C<before> is just a reverse of C<after>. I.e. C<Plugin1 before Plugin2> is the same
 as C<Plugin2 after Plugin1>) define desirable relations. In other words, no fatalities would happen if these relations
-are broken. By 'broken' we mean that either I<Plugin2> or I<Plugin3> are missing; or together with I<Plugin1> and,
+are broken. 'Broken' means here that either I<Plugin2> or I<Plugin3> are missing; or together with I<Plugin1> and,
 possibly with some other plugins too, they form a circular dependency (see below about sorting).
 
 On the  other hand, C<demand> means that if it can't be fulfilled then the only way to resolve the situation is to
@@ -621,21 +621,95 @@ of them which the users wants to allow to be overriden. For example:
     }
 
 The outcome of applying the trait differs depending on wether the plugin manager is in I<strict> or I<loose> mode. In
-the former it will raise an error for any attempt to override an unpluggable class or attach a handler to an unpluggable
-method. In the latter (which is the default) any class or method are considered pluggable.
+the former case it will raise an error for any attempt to override an unpluggable class or attach a handler to an
+unpluggable method. In the latter case (which is the default) any class or method is considered pluggable and gets
+registed as such with
+L<OO::Plugin::Registry|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.3/docs/md/OO/Plugin/Registry.md>.
 
 A user can request a registry of pluggables from
-L<OO::Plugin::Registry|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.3/docs/md/OO/Plugin/Registry.md>. This
-information can be used, for example, to provide a plugin developer with the information about what objects are opened
-for "suggestions".
+L<OO::Plugin::Registry|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.3/docs/md/OO/Plugin/Registry.md#method-pluggable-classes>.
+This information can be used, for example, to provide a plugin developer with the information about what objects are
+opened for "suggestions".
 
 Note though that in I<loose> mode the manager will register any class or method requested by a plugin as pluggable. This
 functionality is considered experimental and might be a subject for change in the future.
+
+=head2 Traits
+
+The framework provides a couple of traits. They were mostly noted in this manual, but it worth listing them all together
+in this section.
+
+=head3 is pluggable
+
+The most simple trait simply marking a class or a method as allowed for plugging. It is described in section
+L<Pluggables|#pluggables>.
+
+=head3 is plug-(before|around|after)
+
+These three traits must be applied to plugin methods implementing method handling. They define what stage of the method
+call to install the handler into. Their parameters define what method of what class is to be handled. There're two
+forms allowed for the parameters: C<List> and C<Hash>.
+
+In the list form each element of the list could either be a C<Pair> or a string. When it's a pair then the key is a
+class name and the value is a method name. The method name, in turn, could be just an asterisk I<'*'> to specify all
+public methods of the class:
+
+    plugin Plugin1 {
+        method around-foo ( ... ) is plug-around( :Foo<foo> ) {
+            ...
+        }
+        method monitor ( |params ) is plug-before( Foo => '*', 'Bar', <Baz Fubar> ) {
+            ...
+        }
+    }
+
+I<Note> Despite all over this manual I use I<(before|around|after)-> prefix for method handlers, it's has nothing to do
+with the framework requirements. The method handler name is absolutely irrelevant and can be anything allowed by Perl6.
+
+The C<monitor> handler will be called before all methods of C<Foo>, C<Bar>, C<Baz>, and C<Fubar> classes. Whereas
+C<around-foo> will only handle method C<foo> of C<Foo>, pardon for this pub.
+
+When the trait parameter is a hash the it must have two keys: I<class> and I<method>:
+
+    plugin Plugin1 {
+        method monitor ( |params ) is plug-before{ class => 'Foo', method => '*' } {
+            ...
+        }
+    }
+
+=head3 after, before, demand
+
+These three are pseudo-traits in a way that they don't have a representation via the C<trait_mod> routine. They can only
+be used with a plugin class declared with C<plugin> keyword. Their meaning is mostly outlined in C<Ordering And
+Priorities|#ordering-and-priorities> section of this manual. Their syntax is extremely simple: they all take a list of
+plugin names in unquoted form. Note that it is not plugin classes we're talking about now because if a class is not
+available then this would be a syntax error. But the validity of these names is checked much later, at the plugin
+manager initialization stage. And even then only the absense of I<demand>ed plugins is considered a problem.
+
+It is also worth noting that both short names and FQNs are accepted by the traits. Though the use of short names must
+be carefully considered because of their possible duplication.
+
+    plugin Plugin1 after MyApp::Plugins::Pugin2, Plugin5 before MyApp::Plugins::Plugin4 {
+        ...
+    }
+
+=head3 for
+
+This one is also a pseudo-trait in the same meaning, as the previously noted ordering traits. It can only be applied to
+a C<plug-class>. Another similarity to the ordering traits is that C<for> accepts list of unquoted names. Though this
+time it's a list of classes the related C<plug-class> plans to extend. Short class names are allowed too but with the
+same  precaution about possible duplicates.
+
+B<NOTE> Be very careful about mistypes in C<for> declaration. There is no way to make sure that a missing class name is
+because it is wrongly spelled or because it wasn't requested by application code.
 
 =head1 SEE ALSO
 
 L<OO::Plugin|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.3/docs/md/OO/Plugin.md>,
 L<OO::Plugin::Manager|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.3/docs/md/OO/Plugin/Manager.md>,
 L<OO::Plugin::Class|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.3/docs/md/OO/Plugin/Class.md>
+L<OO::Plugin::Registry|https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.3/docs/md/OO/Plugin/Registry.md>
+
+=AUTHOR  Vadim Belman <vrurg@cpan.org>
 
 =end pod

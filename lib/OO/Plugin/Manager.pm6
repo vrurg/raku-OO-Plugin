@@ -144,7 +144,7 @@ submethod TWEAK (|) {
 }
 
 =begin pod
-=head2 routine normalize-name
+=head2 method normalize-name
 =begin item
 C<normalize-name( Str:D $plugin, Bool :$strict = True )>
 
@@ -184,7 +184,7 @@ multi method normalize-name ( Str:D :$plugin!, Bool :$strict = True --> Str:D ) 
 }
 
 =begin pod
-=head2 routine short-name
+=head2 method short-name
 
 Takes a plugin name and returns its corresponding short name.
 
@@ -216,7 +216,7 @@ multi method short-name ( Plugin:U \ptype ) {
 }
 
 =begin pod
-=head2 routine meta
+=head2 method meta
 
 Returns plugin's META C<Hash>.
 
@@ -236,7 +236,8 @@ multi method meta ( Str:D :$fqn! --> Hash ) {
 }
 
 =begin pod
-=head2 routine info
+=head2 method info
+
 C<info( Str:D $plugin )>
 
 Returns a copy of information hash on a plugin. The hash contains the following keys:
@@ -271,7 +272,7 @@ method info ( Str:D $plugin --> Hash ) {
 }
 
 =begin pod
-=head2 routine set-priority
+=head2 method set-priority
 
 Set plugins priority in the plugin order.
 
@@ -320,7 +321,7 @@ multi method set-priority ( *@plugins where { $_.all ~~ Str:D }, PlugPriority:D 
 }
 
 =begin pod
-=head2 routine get-priority
+=head2 method get-priority
 
 Returns priority value for a given plugin.
 
@@ -344,7 +345,7 @@ multi method get-priority ( Str:D :$fqn! --> PlugPriority:D ) {
 }
 
 =begin pod
-=head2 routine load-plugins
+=head2 method load-plugins
 
 Initiates automatic loading of plugin modules by traversing modules in repositories and search paths. Only the modules
 with names begining in prefix defined by L<C<base> attribute|#has-str-base> and followed by any of
@@ -385,7 +386,7 @@ method load-plugins ( --> ::?CLASS:D ) {
 }
 
 =begin pod
-=head2 routine initialize
+=head2 method initialize
 =item C<initialize( |create-params )>
 
 Performs final initialization of the plugin manager object. This includes:
@@ -466,7 +467,7 @@ method initialize ( |c-params --> ::?CLASS:D ) {
 }
 
 =begin pod
-=head2 routine disable
+=head2 method disable
 
 Disables plugins.
 
@@ -523,7 +524,7 @@ multi method disable ( *@plugins, Str:D :$reason ) {
 }
 
 =begin pod
-=head2 routine disabled
+=head2 method disabled
 
 If plugin is disabled, a reason text is returned. Undefined value is returned otherwise.
 
@@ -557,7 +558,7 @@ multi method disabled () {
 }
 
 =begin pod
-=head2 routine enabled
+=head2 method enabled
 
 Opposite to L<C<disabled>|#routine-disabled> method. Returns _True_ if plugin is enabled. Supports all the same
 signatures as C<disabled> does.
@@ -568,7 +569,7 @@ method enabled (|c --> Bool) {
 }
 
 =begin pod
-=head2 routine order
+=head2 method order
 
 Returns list of plugin names as they were ordered at the initialization time.
 =end pod
@@ -576,7 +577,7 @@ Returns list of plugin names as they were ordered at the initialization time.
 method order { @!order.clone }
 
 =begin pod
-=head2 routine plugin-objects
+=head2 method plugin-objects
 
 Returns a ordered Seq plugin objects.
 
@@ -587,7 +588,7 @@ method plugin-objects {
 }
 
 =begin pod
-=head2 routine callback
+=head2 method callback
 
 C<callback( Str:D $callback-name, |callback-params )>
 
@@ -646,7 +647,7 @@ method callback( Str:D $cb-name where ? *, |params ) {
 }
 
 =begin pod
-=head2 routine cb
+=head2 method cb
 
 Shortcut for L<C<callback>|#routine-callback>.
 =end pod
@@ -654,7 +655,7 @@ Shortcut for L<C<callback>|#routine-callback>.
 method cb (|c) { self.callback( |c ) }
 
 =begin pod
-=head2 routine event
+=head2 method event
 
 C<event( Str:D $event-name, |event-params )>
 
@@ -697,7 +698,7 @@ method event ( Str:D $name where { .chars > 0 }, |params ) {
 }
 
 =begin pod
-=head2 routine has-plugin
+=head2 method has-plugin
 
 C<has-plugin( Str:D $plugin )>
 
@@ -726,9 +727,9 @@ multi method plugin-object( Str:D :$fqn ) {
 }
 
 =begin pod
-=head2 routine all-enabled
+=head2 method all-enabled
 
-Returns unordered C<Seq> of all enabled plugin names.
+Returns unordered C<Seq> of all enabled plugin FQNs.
 =end pod
 # Return all enabled plugins
 method all-enabled ( --> Seq:D ) {
@@ -736,7 +737,7 @@ method all-enabled ( --> Seq:D ) {
 }
 
 =begin pod
-=head2 routine class
+=head2 method class
 
 C<class( MyClass )>
 
@@ -765,7 +766,7 @@ method class ( Any:U \type --> Any:U ) {
 }
 
 =begin pod
-=head2 routine create
+=head2 method create
 
 C<create( MyClass, |constructor-params )>
 
@@ -780,7 +781,7 @@ method create ( Any:U \type, |params ) {
 }
 
 =begin pod
-=head2 routine finish
+=head2 method finish
 
 This is the plugin manager finalization method. It must always be called before application shutdown to ensure proper
 completion of all event handers possibly still running in the background.

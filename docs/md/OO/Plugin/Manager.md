@@ -75,8 +75,8 @@ Number of seconds for the dispatcher to wait for another event after processing 
 METHODS
 =======
 
-routine normalize-name
-----------------------
+method normalize-name
+---------------------
 
   * `normalize-name( Str:D $plugin, Bool :$strict = True )`
 
@@ -88,8 +88,8 @@ routine normalize-name
 
 *Note* would always return the `$plugin` parameter before the plugin manager is initialized.
 
-routine short-name
-------------------
+method short-name
+-----------------
 
 Takes a plugin name and returns its corresponding short name.
 
@@ -105,8 +105,8 @@ Takes a plugin name and returns its corresponding short name.
 
         my $sname = $plugin-manager.short-name( $plugin-obj.WHAT );
 
-routine meta
-------------
+method meta
+-----------
 
 Returns plugin's META `Hash`.
 
@@ -116,8 +116,10 @@ Returns plugin's META `Hash`.
 
     Faster version, avoids name normalization.
 
-routine info `info( Str:D $plugin )`
-------------------------------------
+method info
+-----------
+
+`info( Str:D $plugin )`
 
 Returns a copy of information hash on a plugin. The hash contains the following keys:
 
@@ -137,8 +139,8 @@ Returns a copy of information hash on a plugin. The hash contains the following 
 
     Version (`Version` object)
 
-routine set-priority
---------------------
+method set-priority
+-------------------
 
 Set plugins priority in the plugin order.
 
@@ -154,8 +156,8 @@ Set plugins priority in the plugin order.
 
 See [`PlugPriority`](#enum-plugpriority)
 
-routine get-priority
---------------------
+method get-priority
+-------------------
 
 Returns priority value for a given plugin.
 
@@ -167,8 +169,8 @@ Returns priority value for a given plugin.
 
 See [`PlugPriority`](#enum-plugpriority)
 
-routine load-plugins
---------------------
+method load-plugins
+-------------------
 
 Initiates automatic loading of plugin modules by traversing modules in repositories and search paths. Only the modules with names begining in prefix defined by [`base` attribute](#has-str-base) and followed by any of [`namespaces`](#has-positional-namespaces) will be loaded. For example:
 
@@ -186,8 +188,8 @@ If a module cannot be loaded due to a error the method appends a `Pair` of `$mod
 
 *Note* that modules are just loaded and no other work is done by this method.
 
-routine initialize
-------------------
+method initialize
+-----------------
 
   * `initialize( |create-params )`
 
@@ -218,8 +220,8 @@ would pass the application object to all loaded plugins. This would simplify the
 
 **NOTE** The second initialization stage includes building of mapping of short plugin names to FQN. Before this is done
 
-routine disable
----------------
+method disable
+--------------
 
 Disables plugins.
 
@@ -235,8 +237,8 @@ A disabled plugin won't have its object created and will be excluded from any in
 
 *Implementation note.* The method allows both short plugin names and FQN, as most other methods do. But the name normalization is not possible before the initialization is complete. To make it all even more fun, disabling is not possible _after_ the initialization! To resolve this collision, all calls to `disable` from the user code are only getting recorded by the framework. The recorded calls are then replayed at the initialization time. Because of this trick it is not possible to read disable reasons at early stages of the plugin manager life cycle.
 
-routine disabled
-----------------
+method disabled
+---------------
 
 If plugin is disabled, a reason text is returned. Undefined value is returned otherwise.
 
@@ -254,25 +256,25 @@ There is a parameter-less variant of the method:
 
 which would return a hash where keys are plugin FQNs and values are reasons.
 
-routine enabled
----------------
+method enabled
+--------------
 
 Opposite to [`disabled`](#routine-disabled) method. Returns _True_ if plugin is enabled. Supports all the same signatures as `disabled` does.
 
-routine order
--------------
+method order
+------------
 
 Returns list of plugin names as they were ordered at the initialization time.
 
-routine plugin-objects
-----------------------
+method plugin-objects
+---------------------
 
 Returns a ordered Seq plugin objects.
 
 See [`order`](#routine-order)
 
-routine callback
-----------------
+method callback
+---------------
 
 `callback( Str:D $callback-name, |callback-params )`
 
@@ -282,13 +284,13 @@ Method returns what callback handler requested to return.
 
 Read more in [OO::Plugin::Manual](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.3/docs/md/OO/Plugin/Manual.md#callbacks).
 
-routine cb
-----------
+method cb
+---------
 
 Shortcut for [`callback`](#routine-callback).
 
-routine event
--------------
+method event
+------------
 
 `event( Str:D $event-name, |event-params )`
 
@@ -300,8 +302,8 @@ Read more in [OO::Plugin::Manual](https://github.com/vrurg/Perl6-OO-Plugin/blob/
 
 See also [`finish`](#routine-finish).
 
-routine has-plugin
-------------------
+method has-plugin
+-----------------
 
 `has-plugin( Str:D $plugin )`
 
@@ -316,27 +318,27 @@ method plugin-object
 
 Retruns the requested plugin object if it exists. As always, the `:$fqn` version is slightly faster.
 
-routine all-enabled
--------------------
+method all-enabled
+------------------
 
-Returns unordered `Seq` of all enabled plugin names.
+Returns unordered `Seq` of all enabled plugin FQNs.
 
-routine class
--------------
+method class
+------------
 
 `class( MyClass )`
 
 One of the two key methods of this class. For a given class it creates a newly generated one with all `plug-class`es and method handlers applied. All the magic this framework provides with regard to extending application classes functionality through delegating to the plugins is only possible after calling this method. Read more in [OO::Plugin::Manual](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.3/docs/md/OO/Plugin/Manual.md#basics).
 
-routine create
---------------
+method create
+-------------
 
 `create( MyClass, |constructor-params )`
 
 Creates a new instance for class `MyClass` with all the magic applied, as described for [method `class`](#class) and in [OO::Plugin::Manual](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.3/docs/md/OO/Plugin/Manual.md#basics). This method is what must be used in place of the standard `new`.
 
-routine finish
---------------
+method finish
+-------------
 
 This is the plugin manager finalization method. It must always be called before application shutdown to ensure proper completion of all event handers possibly still running in the background.
 
