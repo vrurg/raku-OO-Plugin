@@ -44,7 +44,7 @@ vpath %.pod6 $(dir $(POD_SRC))
 #vpath %.html $(HTML_SUBDIRS)
 
 .PHONY: all html test author-test release-test is-repo-clean build depends release meta6_mod meta \
-		archive upload clean install doc md html docs_dirs doc_ver_patch
+		archive upload clean install doc md html docs_dirs doc_ver_patch version
 
 %.md $(addsuffix /%.md,$(MD_SUBDIRS)):: %.pm6
 	@echo "===> Generating" $@ "of" $<
@@ -99,6 +99,10 @@ build: depends doc
 depends: meta
 	@echo "===> Installing dependencies"
 	@zef --deps-only install .
+
+# doc is duplicated on purpose
+version: doc doc meta clean
+	@git add . && git commit -m 'Minor: version bump'
 
 release: build is-repo-clean release-test archive
 	@echo "===> Done releasing"
