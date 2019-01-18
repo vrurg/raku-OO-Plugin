@@ -1,7 +1,6 @@
 use v6.d;
-use OO::Plugin;
-use lib './t';
 use Test;
+use OO::Plugin;
 use OO::Plugin::Manager;
 
 plan 6;
