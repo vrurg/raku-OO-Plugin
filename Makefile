@@ -10,7 +10,7 @@ META=META6.json
 META_BUILDER=./build-tools/gen-META.p6
 
 PROVE_CMD=prove6
-PROVE_FLAGS=-l -I./build-tools/lib
+PROVE_FLAGS=-l -I ./build-tools/lib
 TEST_DIRS=t
 PROVE=$(PROVE_CMD) $(PROVE_FLAGS) $(TEST_DIRS)
 
