@@ -1,51 +1,51 @@
 {
-  "license": "Artistic-2.0",
-  "auth": "github:vrurg",
-  "meta-version": "0",
-  "version": "0.0.5",
-  "source-url": "git://github.com/vrurg/Perl6-OO-Plugin.git",
-  "support": {
-    "source": "https://github.com/vrurg/Perl6-OO-Plugin.git"
-  },
-  "name": "OO::Plugin",
-  "tags": [
-    "OO",
-    "Plugin",
-    "Plugins"
-  ],
+  "description": "Framework for working with OO application plugins",
+  "production": true,
   "resources": [
     
   ],
-  "perl": "6.d",
-  "production": true,
+  "source-url": "git://github.com/vrurg/Perl6-OO-Plugin.git",
   "provides": {
     "OO::Plugin::Declarations": "lib/OO/Plugin/Declarations.pm6",
-    "OO::Plugin::Metamodel::PlugRoleHOW": "lib/OO/Plugin/Metamodel/PlugRoleHOW.pm6",
-    "OO::Plugin": "lib/OO/Plugin.pm6",
-    "OO::Plugin::Manager": "lib/OO/Plugin/Manager.pm6",
-    "OO::Plugin::Registry": "lib/OO/Plugin/Registry.pm6",
     "OO::Plugin::Metamodel::PluginHOW": "lib/OO/Plugin/Metamodel/PluginHOW.pm6",
+    "OO::Plugin::Registry": "lib/OO/Plugin/Registry.pm6",
+    "OO::Plugin::Metamodel::PlugRoleHOW": "lib/OO/Plugin/Metamodel/PlugRoleHOW.pm6",
+    "OO::Plugin::Class": "lib/OO/Plugin/Class.pm6",
     "OO::Plugin::Exception": "lib/OO/Plugin/Exception.pm6",
-    "OO::Plugin::Class": "lib/OO/Plugin/Class.pm6"
+    "OO::Plugin::Manager": "lib/OO/Plugin/Manager.pm6",
+    "OO::Plugin": "lib/OO/Plugin.pm6"
   },
+  "license": "Artistic-2.0",
+  "version": "0.0.6",
+  "perl": "6.d",
   "depends": [
     "WhereList",
     "File::Find",
     "WhereList"
   ],
-  "description": "Framework for working with OO application plugins",
+  "tags": [
+    "OO",
+    "Plugin",
+    "Plugins"
+  ],
+  "authors": [
+    "Vadim Belman <vrurg@cpan.org>"
+  ],
+  "support": {
+    "source": "https://github.com/vrurg/Perl6-OO-Plugin.git"
+  },
+  "build-depends": [
+    "META6",
+    "p6doc",
+    "Pod::To::Markdown"
+  ],
+  "auth": "github:vrurg",
+  "meta-version": "0",
+  "name": "OO::Plugin",
   "test-depends": [
     "Test",
     "Test::META",
     "Test::When",
     "App::Prove6"
-  ],
-  "authors": [
-    "Vadim Belman <vrurg@cpan.org>"
-  ],
-  "build-depends": [
-    "META6",
-    "p6doc",
-    "Pod::To::Markdown"
   ]
 }
