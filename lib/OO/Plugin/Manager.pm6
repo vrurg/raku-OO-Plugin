@@ -619,7 +619,7 @@ method callback( Str:D $cb-name where ? *, |params ) {
             my $rc = $pobj.on-callback( |cb-params );
             $msg.set-rc( $rc ) if $rc.defined and not $msg.has-rc;
 
-            CATCH {
+            CONTROL {
                 self!dbg: "!!! CAUGHT ", $_.perl;
                 when CX::Plugin::Last | CX::Plugin::Redo {
                     $loop-action = $_;
@@ -1180,7 +1180,7 @@ method !build-class ( Mu:U \type --> Mu:U ) is raw {
                         }
                     }
 
-                    CATCH {
+                    CONTROL {
                         when CX::Plugin::Last {
                             $plugin-manager!dbg: "*** 'LAST' CONTROL RAISED BY ", $_.plugin.^name;
                             $msg.set-rc( $_.rc ) unless $stage ~~ 'before';
