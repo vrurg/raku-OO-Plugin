@@ -77,6 +77,8 @@ SEE ALSO
 
 [`OO::Plugin::Manual`](Plugin/Manual.md), [`OO::Plugin::Manager`](Plugin/Manager.md), [`OO::Plugin::Class`](Plugin/Class.md) [`OO::Plugin::Registry`](Plugin/Registry.md)
 
+[ChangeLog](ChangeLog.md)
+
 AUTHOR
 ======
 

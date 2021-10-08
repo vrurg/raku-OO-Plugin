@@ -75,7 +75,7 @@ L<C<OO::Plugin::Class>|Plugin/Class.md>.
 
 =end pod
 
-module OO::Plugin:ver<0.0.7>:auth<zef:vrurg>:api<0.0.1> {
+module OO::Plugin:ver<0.0.8>:auth<zef:vrurg>:api<0.0.1> {
     use OO::Plugin::Exception;
 
     our proto plugin-meta (|) is export {*}
@@ -290,6 +290,8 @@ L<C<OO::Plugin::Manual>|Plugin/Manual.md>,
 L<C<OO::Plugin::Manager>|Plugin/Manager.md>,
 L<C<OO::Plugin::Class>|Plugin/Class.md>
 L<C<OO::Plugin::Registry>|Plugin/Registry.md>
+
+L<ChangeLog|ChangeLog.md>
 
 =AUTHOR  Vadim Belman <vrurg@cpan.org>
 
