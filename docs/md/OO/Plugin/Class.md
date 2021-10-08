@@ -27,7 +27,7 @@ Data shared among all the plugins. This attribute is similar to .private except 
 
 ### method set-rc
 
-```perl6
+```raku
 method set-rc(
     $!rc is copy
 ) returns Nil
@@ -37,7 +37,7 @@ This method sets the suggested return value for the current execution chain.
 
 ### method reset-rc
 
-```perl6
+```raku
 method reset-rc() returns Nil
 ```
 
@@ -45,7 +45,7 @@ Reset the suggested return value.
 
 ### method has-rc
 
-```perl6
+```raku
 method has-rc() returns Bool
 ```
 
@@ -53,7 +53,7 @@ Returns _True_ if the suggested return value has been set.
 
 ### method rc
 
-```perl6
+```raku
 method rc() returns Mu
 ```
 
@@ -93,7 +93,7 @@ Plugin's short name.
 
 ### method on-event
 
-```perl6
+```raku
 method on-event(
     Str:D $name,
     |
@@ -104,7 +104,7 @@ Event handler.
 
 ### method on-callback
 
-```perl6
+```raku
 method on-callback(
     Str:D $cb-name,
     OO::Plugin::Class::PluginMessage:D $msg,
@@ -117,7 +117,7 @@ Callback handler.
 SEE Also
 ========
 
-[OO::Plugin::Manual](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.7/docs/md/OO/Plugin/Manual.md), [OO::Plugin::Manager](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.7/docs/md/OO/Plugin/Manager.md), [OO::Plugin::Class](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.7/docs/md/OO/Plugin.md)
+[`OO::Plugin::Manual`](Manual.md), [`OO::Plugin::Manager`](Manager.md), [`OO::Plugin::Class`](Class.md)
 
 AUTHOR
 ======

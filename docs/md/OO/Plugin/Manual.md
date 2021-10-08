@@ -174,7 +174,7 @@ This will be covered in the section below.
 Writing A Plugin
 ----------------
 
-A plugin is an instance of a class inheriting from a `Plugin` class defined in [OO::Plugin::Class](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.7/docs/md/OO/Plugin/Class.md) module. To reduce the boilerplate and provide better readability of the code special class declarator `plugin` is provided:
+A plugin is an instance of a class inheriting from a `Plugin` class defined in [`OO::Plugin::Class`](Class.md) module. To reduce the boilerplate and provide better readability of the code special class declarator `plugin` is provided:
 
     plugin MyPlugin {
         ...
@@ -278,7 +278,7 @@ But this isn't really handy when one actually needs to have access to the parame
 
 **NOTE** For speeding up operations parameters are not checked against handler signature by the plugin manager code.
 
-**NOTE** The framework checks for the handler signature validity by inspecting its first parameter. It has to be a scalar (i.e. has `$` sigil) and be of type `Any`. It would better bet `MethodHandlerMsg` but due to a bug in Perl6 this is not possible for now because it causes an internal error.
+**NOTE** The framework checks for the handler signature validity by inspecting its first parameter. It has to be a scalar (i.e. has `$` sigil) and be of type `Any`. It would better be `MethodHandlerMsg` but due to a bug in Raku this is not possible for now because it causes an internal error.
 
 Same rule apply to multi-dispatch method handlers where the `plug-` traits are to be applied to the `proto`:
 
@@ -505,9 +505,9 @@ The framework provides a special trait `is pluggable` which is applicable to bot
         }
     }
 
-The outcome of applying the trait differs depending on wether the plugin manager is in *strict* or *loose* mode. In the former case it will raise an error for any attempt to override an unpluggable class or attach a handler to an unpluggable method. In the latter case (which is the default) any class or method is considered pluggable and gets registed as such with [OO::Plugin::Registry](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.7/docs/md/OO/Plugin/Registry.md).
+The outcome of applying the trait differs depending on wether the plugin manager is in *strict* or *loose* mode. In the former case it will raise an error for any attempt to override an unpluggable class or attach a handler to an unpluggable method. In the latter case (which is the default) any class or method is considered pluggable and gets registed as such with [`OO::Plugin::Registry`](Registry.md).
 
-A user can request a registry of pluggables from [OO::Plugin::Registry](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.7/docs/md/OO/Plugin/Registry.md#method-pluggable-classes). This information can be used, for example, to provide a plugin developer with the information about what objects are opened for "suggestions".
+A user can request a registry of pluggables from [`OO::Plugin::Registry`](Registry.md). This information can be used, for example, to provide a plugin developer with the information about what objects are opened for "suggestions".
 
 Note though that in *loose* mode the manager will register any class or method requested by a plugin as pluggable. This functionality is considered experimental and might be a subject for change in the future.
 
@@ -535,7 +535,7 @@ In the list form each element of the list could either be a `Pair` or a string. 
         }
     }
 
-*Note* Despite all over this manual I use *(before|around|after)-* prefix for method handlers, it's has nothing to do with the framework requirements. The method handler name is absolutely irrelevant and can be anything allowed by Perl6.
+*Note* Despite all over this manual I use *(before|around|after)-* prefix for method handlers, it's has nothing to do with the framework requirements. The method handler name is absolutely irrelevant and can be anything allowed by Raku.
 
 The `monitor` handler will be called before all methods of `Foo`, `Bar`, `Baz`, and `Fubar` classes. Whereas `around-foo` will only handle method `foo` of `Foo`, pardon for this pub.
 
@@ -566,7 +566,7 @@ This one is also a pseudo-trait in the same meaning, as the previously noted ord
 SEE ALSO
 ========
 
-[OO::Plugin](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.7/docs/md/OO/Plugin.md), [OO::Plugin::Manager](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.7/docs/md/OO/Plugin/Manager.md), [OO::Plugin::Class](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.7/docs/md/OO/Plugin/Class.md) [OO::Plugin::Registry](https://github.com/vrurg/Perl6-OO-Plugin/blob/v0.0.7/docs/md/OO/Plugin/Registry.md)
+[`OO::Plugin`](../Plugin.md), [`OO::Plugin::Manager`](Manager.md), [`OO::Plugin::Class`](Class.md) [`OO::Plugin::Registry`](Registry.md)
 
 AUTHOR
 ======

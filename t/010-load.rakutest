@@ -1,0 +1,29 @@
+use v6;
+use Test::Async <Base When>;
+use lib $?FILE.IO.parent(1).add('lib');
+use lib <inst#.test-repo>;
+BEGIN {
+    if %*ENV<RELEASE_TESTING> {
+        my $test-dir = $?FILE.IO.parent(1);
+        my $proc = run $*EXECUTABLE-NAME, '-I' ~ $test-dir.parent(1).add('lib'), $test-dir.add("bin").add("pre-install-mod.raku"), $test-dir.add("raku-Foo-Plugin-Test");
+        unless $proc.exitcode == 0 {
+            bail-out "Can't install package Foo::Plugin::Test";
+        }
+    }
+}
+use OOPTest;
+use OO::Plugin::Manager;
+use OO::Plugin;
+
+plan 1, :when<release>;
+
+my $mgr = OO::Plugin::Manager.new( base => 'Foo', :!debug );
+$mgr.load-plugins;
+$mgr.initialize;
+
+my $registry = Plugin::Registry.instance;
+
+# diag $registry.plugin-types.map( { $mgr.short-name( $_.^name ) } ).Set;
+is-deeply $registry.plugin-types.map( { $mgr.short-name( $_.^name ) } ).Set, <Sample TestPlug1 TestPlugin Plug2>.Set, "plugin modules are loaded";
+
+done-testing;

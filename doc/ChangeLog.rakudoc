@@ -1,0 +1,11 @@
+=begin pod
+=head1 CHANGELOG
+
+=head2 v0.0.8
+
+This version is refreshed to keep up with the latest standards like use zef ecosystem.
+
+=item Changed event handling to use `Async::Workers`
+=item Renamed all sources to use Raku extensions
+
+=end pod
